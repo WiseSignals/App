@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0a">
+<title>Kraken Signals · Admin</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;--surface3:#252525;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);
+  --green:#1D9E75;--green-dim:rgba(29,158,117,0.15);
+  --red:#E24B4A;--red-dim:rgba(226,75,74,0.12);
+  --amber:#BA7517;--amber-dim:rgba(186,117,23,0.15);
+  --blue:#4A90D9;--blue-dim:rgba(74,144,217,0.15);
+  --text:#f0f0f0;--text2:#999;--text3:#555;
+  --radius:10px;--radius-lg:16px
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+.header-title{font-size:16px;font-weight:600}
+.header-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.logout-btn{font-size:12px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);padding:6px 12px;border-radius:var(--radius);cursor:pointer}
+.container{max-width:900px;margin:0 auto;padding:1.5rem}
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1.5rem}
+@media(min-width:600px){.stats-grid{grid-template-columns:repeat(4,1fr)}}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem}
+.stat-value{font-size:24px;font-weight:700;margin-bottom:4px}
+.stat-label{font-size:11px;color:var(--text2)}
+.section-title{font-size:14px;font-weight:600;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center}
+.btn{padding:8px 14px;font-size:13px;font-weight:500;border-radius:var(--radius);border:none;cursor:pointer;transition:opacity 0.2s}
+.btn:hover{opacity:0.85}
+.btn-green{background:var(--green);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-amber{background:var(--amber);color:#fff}
+.btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.user-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.user-row:last-child{border-bottom:none}
+.user-avatar{width:36px;height:36px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--green);flex-shrink:0}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-meta{font-size:11px;color:var(--text2);margin-top:2px}
+.user-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.plan-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:6px;display:inline-block}
+.plan-free{background:var(--surface2);color:var(--text2)}
+.plan-plus{background:var(--blue-dim);color:var(--blue)}
+.plan-pro{background:var(--green-dim);color:var(--green)}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px}
+.dot-active{background:var(--green)}
+.dot-disabled{background:var(--red)}
+.dot-expired{background:var(--amber)}
+.invite-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.invite-row:last-child{border-bottom:none}
+.invite-code{font-family:monospace;font-size:13px;font-weight:600;color:var(--green);letter-spacing:1px;flex:1}
+.invite-meta{font-size:11px;color:var(--text2)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:380px}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:1.25rem}
+.form-group{margin-bottom:1rem}
+.form-label{font-size:12px;color:var(--text2);margin-bottom:6px;display:block;font-weight:500}
+.form-input{width:100%;padding:10px 12px;font-size:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);outline:none}
+.form-input:focus{border-color:var(--green)}
+.form-select{width:100%;padding:10px 12px;font-size:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);outline:none}
+.modal-btns{display:flex;gap:8px;margin-top:1.25rem}
+.modal-btns .btn{flex:1}
+.tab-nav{display:flex;gap:4px;background:var(--surface2);border-radius:var(--radius);padding:4px;margin-bottom:1.25rem}
+.tab-nav-btn{flex:1;padding:7px;font-size:13px;font-weight:500;border-radius:8px;border:none;cursor:pointer;background:transparent;color:var(--text2)}
+.tab-nav-btn.active{background:var(--surface);color:var(--text)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:10px 20px;border-radius:50px;font-size:13px;font-weight:500;z-index:200;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.toast.show{opacity:1}
+.empty{text-align:center;padding:2rem;color:var(--text3);font-size:13px}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div class="header-title">⚙️ Admin Panel</div>
+    <div class="header-sub">Kraken Signals Management</div>
+  </div>
+  <button class="logout-btn" onclick="logout()">Sign out</button>
+</div>
+
+<div class="container">
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-value" id="statTotal">0</div><div class="stat-label">Total Users</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--green)" id="statActive">0</div><div class="stat-label">Active</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--amber)" id="statExpiring">0</div><div class="stat-label">Expiring Soon</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--blue)" id="statInvites">0</div><div class="stat-label">Open Invites</div></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-nav">
+    <button class="tab-nav-btn active" onclick="switchTab('users')">👥 Users</button>
+    <button class="tab-nav-btn" onclick="switchTab('invites')">🔗 Invitations</button>
+    <button class="tab-nav-btn" onclick="switchTab('system')">📊 System</button>
+  </div>
+
+  <!-- USERS TAB -->
+  <div class="tab-panel active" id="tabUsers">
+    <div class="section-title">
+      <span>All Users</span>
+      <button class="btn btn-green btn-sm" onclick="openNewUser()">+ Add User</button>
+    </div>
+    <div class="card" id="usersList"></div>
+  </div>
+
+  <!-- INVITES TAB -->
+  <div class="tab-panel" id="tabInvites">
+    <div class="section-title">
+      <span>Invitation Links</span>
+      <button class="btn btn-green btn-sm" onclick="openNewInvite()">+ Generate Link</button>
+    </div>
+    <div class="card" id="invitesList"></div>
+  </div>
+
+  <!-- SYSTEM TAB -->
+  <div class="tab-panel" id="tabSystem">
+    <div class="card">
+      <div class="section-title"><span>System Info</span></div>
+      <div style="font-size:13px;color:var(--text2);line-height:2">
+        <div>Version: <strong style="color:var(--text)">Phase 1.5 (Pre-Railway)</strong></div>
+        <div>Backend: <strong style="color:var(--amber)">Not connected (Phase 2)</strong></div>
+        <div>Database: <strong style="color:var(--amber)">localStorage (temporary)</strong></div>
+        <div>Telegram Bot: <strong style="color:var(--amber)">Not configured</strong></div>
+        <div>Auto-trade Engine: <strong style="color:var(--amber)">Frontend only</strong></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title"><span>Admin Password</span></div>
+      <div class="form-group"><label class="form-label">New Admin Password</label><input class="form-input" type="password" id="newAdminPwd"></div>
+      <div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" type="password" id="confirmAdminPwd"></div>
+      <button class="btn btn-green" onclick="changeAdminPwd()">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW USER MODAL -->
+<div class="modal-overlay" id="modalUser">
+  <div class="modal">
+    <div class="modal-title" id="modalUserTitle">Add User</div>
+    <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="uName" type="text"></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="uEmail" type="email"></div>
+    <div class="form-group"><label class="form-label">Temporary Password</label><input class="form-input" id="uPwd" type="password" placeholder="Min 8 characters"></div>
+    <div class="form-group"><label class="form-label">Plan</label>
+      <select class="form-select" id="uPlan">
+        <option value="free">Free</option>
+        <option value="plus">Plus</option>
+        <option value="pro">Pro</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Account Expires</label>
+      <select class="form-select" id="uExpiry">
+        <option value="30">30 days</option>
+        <option value="90">3 months</option>
+        <option value="180">6 months</option>
+        <option value="365">1 year</option>
+        <option value="0">Never</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('modalUser')">Cancel</button>
+      <button class="btn btn-green" onclick="saveUser()" id="btnSaveUser">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT USER MODAL -->
+<div class="modal-overlay" id="modalEditUser">
+  <div class="modal">
+    <div class="modal-title">Edit User</div>
+    <input type="hidden" id="editUserId">
+    <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="editName" type="text"></div>
+    <div class="form-group"><label class="form-label">Plan</label>
+      <select class="form-select" id="editPlan">
+        <option value="free">Free</option>
+        <option value="plus">Plus</option>
+        <option value="pro">Pro</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Status</label>
+      <select class="form-select" id="editStatus">
+        <option value="active">Active</option>
+        <option value="disabled">Disabled</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Extend Expiry</label>
+      <select class="form-select" id="editExpiry">
+        <option value="0">No change</option>
+        <option value="30">+30 days</option>
+        <option value="90">+3 months</option>
+        <option value="180">+6 months</option>
+        <option value="365">+1 year</option>
+        <option value="9999">Never expires</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Reset Password (leave blank to keep)</label><input class="form-input" id="editPwd" type="password" placeholder="New password"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('modalEditUser')">Cancel</button>
+      <button class="btn btn-green" onclick="updateUser()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW INVITE MODAL -->
+<div class="modal-overlay" id="modalInvite">
+  <div class="modal">
+    <div class="modal-title">Generate Invitation Link</div>
+    <div class="form-group"><label class="form-label">Plan for new user</label>
+      <select class="form-select" id="invPlan">
+        <option value="free">Free</option>
+        <option value="plus">Plus</option>
+        <option value="pro">Pro</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Link expires in</label>
+      <select class="form-select" id="invLinkExpiry">
+        <option value="24">24 hours</option>
+        <option value="48">48 hours</option>
+        <option value="168">1 week</option>
+        <option value="720">1 month</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">User account expires after</label>
+      <select class="form-select" id="invUserExpiry">
+        <option value="30">30 days</option>
+        <option value="90">3 months</option>
+        <option value="180">6 months</option>
+        <option value="365">1 year</option>
+        <option value="0">Never</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('modalInvite')">Cancel</button>
+      <button class="btn btn-green" onclick="generateInvite()">Generate</button>
+    </div>
+  </div>
+</div>
+
+<!-- GENERATED INVITE MODAL -->
+<div class="modal-overlay" id="modalInviteResult">
+  <div class="modal">
+    <div class="modal-title">✅ Invitation Link Generated</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Share this link with the user:</div>
+    <div style="background:var(--surface2);border:1px solid var(--green);border-radius:var(--radius);padding:12px;font-size:12px;word-break:break-all;color:var(--green);font-family:monospace;margin-bottom:12px" id="generatedLink"></div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:1rem" id="generatedMeta"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('modalInviteResult')">Close</button>
+      <button class="btn btn-green" onclick="copyLink()">Copy Link</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── AUTH CHECK ───────────────────────────────────────────────
+const adminSession=localStorage.getItem('ks_admin_session');
+if(!adminSession){
+  const pwd=prompt('Admin password:');
+  const stored=localStorage.getItem('ks_admin_pwd')||'admin123';
+  if(pwd!==stored){alert('Invalid password');window.location.href='login.html';}
+  else{localStorage.setItem('ks_admin_session',Date.now().toString());}
+}
+
+function logout(){localStorage.removeItem('ks_admin_session');window.location.href='login.html';}
+
+// ── DATA ─────────────────────────────────────────────────────
+function getUsers(){return JSON.parse(localStorage.getItem('ks_users')||'[]');}
+function saveUsers(u){localStorage.setItem('ks_users',JSON.stringify(u));}
+function getInvites(){return JSON.parse(localStorage.getItem('ks_invites_full')||'[]');}
+function saveInvites(i){localStorage.setItem('ks_invites_full',JSON.stringify(i));}
+
+// ── STATS ────────────────────────────────────────────────────
+function updateStats(){
+  const users=getUsers(),invites=getInvites();
+  const now=Date.now();
+  const active=users.filter(u=>u.status!=='disabled'&&(u.expires===0||u.expires>now)).length;
+  const expiring=users.filter(u=>u.expires>0&&u.expires-now<7*24*3600*1000&&u.expires>now).length;
+  const openInv=invites.filter(i=>i.expires>now&&!i.used).length;
+  document.getElementById('statTotal').textContent=users.length;
+  document.getElementById('statActive').textContent=active;
+  document.getElementById('statExpiring').textContent=expiring;
+  document.getElementById('statInvites').textContent=openInv;
+}
+
+// ── USERS ────────────────────────────────────────────────────
+function renderUsers(){
+  const users=getUsers(),el=document.getElementById('usersList');
+  if(!users.length){el.innerHTML='<div class="empty">No users yet. Generate an invitation link to add users.</div>';return;}
+  const now=Date.now();
+  el.innerHTML=users.map(u=>{
+    const expired=u.expires>0&&u.expires<now;
+    const expiringSoon=u.expires>0&&u.expires-now<7*24*3600*1000&&u.expires>now;
+    const status=u.status==='disabled'?'disabled':expired?'expired':'active';
+    const dotClass=status==='active'?'dot-active':status==='expired'?'dot-expired':'dot-disabled';
+    const expiryStr=u.expires===0?'Never':new Date(u.expires).toLocaleDateString('en-CA');
+    const planClass=`plan-${u.plan||'free'}`;
+    return`<div class="user-row">
+      <div class="user-avatar">${(u.name||'U').charAt(0).toUpperCase()}</div>
+      <div class="user-info">
+        <div class="user-name">${u.name||'Unknown'} <span class="plan-badge ${planClass}">${(u.plan||'free').toUpperCase()}</span></div>
+        <div class="user-meta"><span class="status-dot ${dotClass}"></span>${status} · ${u.email} · Expires: ${expiryStr}${expiringSoon?' ⚠️':''}</div>
+      </div>
+      <div class="user-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openEditUser('${u.id}')">Edit</button>
+        <button class="btn ${u.status==='disabled'?'btn-green':'btn-amber'} btn-sm" onclick="toggleUser('${u.id}')">${u.status==='disabled'?'Enable':'Disable'}</button>
+        <button class="btn btn-red btn-sm" onclick="deleteUser('${u.id}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openNewUser(){
+  document.getElementById('modalUserTitle').textContent='Add User';
+  document.getElementById('uName').value='';document.getElementById('uEmail').value='';
+  document.getElementById('uPwd').value='';document.getElementById('uPlan').value='free';
+  document.getElementById('uExpiry').value='30';
+  document.getElementById('modalUser').classList.add('show');
+}
+
+function saveUser(){
+  const name=document.getElementById('uName').value.trim();
+  const email=document.getElementById('uEmail').value.trim();
+  const pwd=document.getElementById('uPwd').value;
+  const plan=document.getElementById('uPlan').value;
+  const days=parseInt(document.getElementById('uExpiry').value);
+  if(!name||!email||!pwd||pwd.length<8){showToast('Please fill all fields (password min 8 chars)');return;}
+  const users=getUsers();
+  if(users.find(u=>u.email===email)){showToast('Email already exists');return;}
+  const expires=days===0?0:Date.now()+days*24*3600*1000;
+  users.push({id:Date.now().toString(),name,email,password:btoa(pwd),plan,status:'active',created:Date.now(),expires});
+  saveUsers(users);closeModal('modalUser');renderUsers();updateStats();showToast('User added ✅');
+}
+
+function openEditUser(id){
+  const users=getUsers(),u=users.find(x=>x.id===id);if(!u)return;
+  document.getElementById('editUserId').value=id;
+  document.getElementById('editName').value=u.name;
+  document.getElementById('editPlan').value=u.plan||'free';
+  document.getElementById('editStatus').value=u.status||'active';
+  document.getElementById('editExpiry').value='0';
+  document.getElementById('editPwd').value='';
+  document.getElementById('modalEditUser').classList.add('show');
+}
+
+function updateUser(){
+  const id=document.getElementById('editUserId').value;
+  const users=getUsers(),idx=users.findIndex(u=>u.id===id);if(idx<0)return;
+  users[idx].name=document.getElementById('editName').value.trim()||users[idx].name;
+  users[idx].plan=document.getElementById('editPlan').value;
+  users[idx].status=document.getElementById('editStatus').value;
+  const days=parseInt(document.getElementById('editExpiry').value);
+  if(days===9999)users[idx].expires=0;
+  else if(days>0)users[idx].expires=(users[idx].expires&&users[idx].expires>Date.now()?users[idx].expires:Date.now())+days*24*3600*1000;
+  const newPwd=document.getElementById('editPwd').value;
+  if(newPwd&&newPwd.length>=8)users[idx].password=btoa(newPwd);
+  saveUsers(users);closeModal('modalEditUser');renderUsers();updateStats();showToast('User updated ✅');
+}
+
+function toggleUser(id){
+  const users=getUsers(),idx=users.findIndex(u=>u.id===id);if(idx<0)return;
+  users[idx].status=users[idx].status==='disabled'?'active':'disabled';
+  saveUsers(users);renderUsers();updateStats();showToast(`User ${users[idx].status} ✅`);
+}
+
+function deleteUser(id){
+  if(!confirm('Delete this user? This cannot be undone.'))return;
+  const users=getUsers().filter(u=>u.id!==id);
+  saveUsers(users);renderUsers();updateStats();showToast('User deleted');
+}
+
+// ── INVITES ──────────────────────────────────────────────────
+function renderInvites(){
+  const invites=getInvites(),el=document.getElementById('invitesList'),now=Date.now();
+  if(!invites.length){el.innerHTML='<div class="empty">No invitation links yet.</div>';return;}
+  el.innerHTML=invites.map(inv=>{
+    const expired=inv.expires<now;const used=inv.used;
+    const status=used?'Used':expired?'Expired':'Active';
+    const statusColor=used?'var(--text3)':expired?'var(--red)':'var(--green)';
+    return`<div class="invite-row">
+      <div style="flex:1;min-width:0">
+        <div class="invite-code">${inv.code}</div>
+        <div class="invite-meta" style="color:${statusColor}">${status} · Plan: ${inv.plan?.toUpperCase()||'FREE'} · Expires: ${new Date(inv.expires).toLocaleDateString('en-CA')}</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        ${!used&&!expired?`<button class="btn btn-ghost btn-sm" onclick="copyInviteCode('${inv.code}')">Copy</button>`:''}
+        <button class="btn btn-red btn-sm" onclick="deleteInvite('${inv.code}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openNewInvite(){document.getElementById('modalInvite').classList.add('show');}
+
+function generateInvite(){
+  const plan=document.getElementById('invPlan').value;
+  const linkHours=parseInt(document.getElementById('invLinkExpiry').value);
+  const userDays=parseInt(document.getElementById('invUserExpiry').value);
+  const code=`${plan.toUpperCase()}-${Math.random().toString(36).substring(2,6).toUpperCase()}-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
+  const invites=getInvites();
+  invites.unshift({code,plan,expires:Date.now()+linkHours*3600*1000,userExpiry:userDays,used:false,created:Date.now()});
+  saveInvites(invites);
+  // Also add to simple invite list for login page
+  const simpleInvites=JSON.parse(localStorage.getItem('ks_invites')||'[]');
+  simpleInvites.push(code);localStorage.setItem('ks_invites',JSON.stringify(simpleInvites));
+  closeModal('modalInvite');
+  const link=`${window.location.origin}${window.location.pathname.replace('admin.html','login.html')}?invite=${code}`;
+  document.getElementById('generatedLink').textContent=link;
+  document.getElementById('generatedMeta').textContent=`Plan: ${plan.toUpperCase()} · Link valid: ${linkHours}h · User expires: ${userDays===0?'Never':userDays+' days'}`;
+  document.getElementById('modalInviteResult').classList.add('show');
+  renderInvites();updateStats();
+}
+
+let linkToCopy='';
+function copyLink(){
+  const link=document.getElementById('generatedLink').textContent;
+  navigator.clipboard?.writeText(link).then(()=>showToast('Link copied! ✅')).catch(()=>{});
+}
+function copyInviteCode(code){
+  const link=`${window.location.origin}${window.location.pathname.replace('admin.html','login.html')}?invite=${code}`;
+  navigator.clipboard?.writeText(link).then(()=>showToast('Link copied! ✅')).catch(()=>{});
+}
+function deleteInvite(code){
+  if(!confirm('Delete this invitation?'))return;
+  const invites=getInvites().filter(i=>i.code!==code);saveInvites(invites);
+  const simple=JSON.parse(localStorage.getItem('ks_invites')||'[]').filter(c=>c!==code);
+  localStorage.setItem('ks_invites',JSON.stringify(simple));
+  renderInvites();updateStats();showToast('Invite deleted');
+}
+
+function changeAdminPwd(){
+  const p1=document.getElementById('newAdminPwd').value;
+  const p2=document.getElementById('confirmAdminPwd').value;
+  if(!p1||p1.length<8){showToast('Password min 8 characters');return;}
+  if(p1!==p2){showToast('Passwords do not match');return;}
+  localStorage.setItem('ks_admin_pwd',p1);showToast('Admin password updated ✅');
+}
+
+// ── UI HELPERS ───────────────────────────────────────────────
+function switchTab(name){
+  document.querySelectorAll('.tab-nav-btn').forEach((b,i)=>b.classList.toggle('active',['users','invites','system'][i]===name));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab'+name.charAt(0).toUpperCase()+name.slice(1))?.classList.add('active');
+}
+function closeModal(id){document.getElementById(id)?.classList.remove('show');}
+let toastTimer;
+function showToast(msg){
+  const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+updateStats();renderUsers();renderInvites();
+</script>
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0a">
+<title>Kraken Signals · Login</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);
+  --green:#1D9E75;--green-dim:rgba(29,158,117,0.15);
+  --red:#E24B4A;--red-dim:rgba(226,75,74,0.12);
+  --text:#f0f0f0;--text2:#999;--text3:#555;
+  --radius:10px;--radius-lg:16px
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+.container{width:100%;max-width:400px}
+.logo{text-align:center;margin-bottom:2rem}
+.logo-icon{width:56px;height:56px;background:var(--green-dim);border:1px solid var(--green);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:24px}
+.logo-title{font-size:22px;font-weight:600;letter-spacing:-0.5px}
+.logo-sub{font-size:13px;color:var(--text2);margin-top:4px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.75rem;margin-bottom:1rem}
+.tabs{display:flex;gap:4px;background:var(--surface2);border-radius:var(--radius);padding:4px;margin-bottom:1.5rem}
+.tab-btn{flex:1;padding:8px;font-size:13px;font-weight:500;border-radius:8px;border:none;cursor:pointer;background:transparent;color:var(--text2);transition:all 0.2s}
+.tab-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.4)}
+.form-group{margin-bottom:1rem}
+.form-label{font-size:12px;color:var(--text2);margin-bottom:6px;display:block;font-weight:500;letter-spacing:0.02em}
+.form-input{width:100%;padding:11px 14px;font-size:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);outline:none;transition:border-color 0.2s}
+.form-input:focus{border-color:var(--green)}
+.form-input::placeholder{color:var(--text3)}
+.lang-row{display:flex;gap:6px;margin-bottom:1.5rem}
+.lang-btn{flex:1;padding:7px 4px;font-size:12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:all 0.2s}
+.lang-btn.active{border-color:var(--green);background:var(--green-dim);color:var(--green)}
+.btn-primary{width:100%;padding:12px;font-size:14px;font-weight:600;background:var(--green);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;transition:opacity 0.2s;letter-spacing:0.01em}
+.btn-primary:hover{opacity:0.9}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.divider{display:flex;align-items:center;gap:10px;margin:1.25rem 0;color:var(--text3);font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.forgot-link{text-align:center;font-size:13px;color:var(--text2);margin-top:1rem}
+.forgot-link a{color:var(--green);text-decoration:none;cursor:pointer}
+.alert{padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:1rem;display:none}
+.alert.error{background:var(--red-dim);border:1px solid rgba(226,75,74,0.3);color:#f08080}
+.alert.success{background:var(--green-dim);border:1px solid rgba(29,158,117,0.3);color:#5DCAA5}
+.alert.show{display:block}
+.invite-note{font-size:12px;color:var(--text3);text-align:center;margin-top:0.75rem;line-height:1.5}
+.plan-chips{display:flex;gap:6px;margin-bottom:1.25rem}
+.plan-chip{flex:1;padding:8px 4px;text-align:center;border-radius:8px;border:1px solid var(--border);font-size:11px;color:var(--text2)}
+.plan-chip span{display:block;font-size:16px;margin-bottom:2px}
+.plan-chip.free{border-color:var(--text3)}
+.plan-chip.plus{border-color:#4A90D9;background:rgba(74,144,217,0.1);color:#7EB3F5}
+.plan-chip.pro{border-color:var(--green);background:var(--green-dim);color:var(--green)}
+.password-wrap{position:relative}
+.password-wrap .form-input{padding-right:40px}
+.eye-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:4px}
+.strength-bar{height:3px;border-radius:2px;margin-top:6px;background:var(--border);overflow:hidden}
+.strength-fill{height:100%;border-radius:2px;transition:width 0.3s,background 0.3s}
+.strength-label{font-size:11px;color:var(--text3);margin-top:4px}
+.footer-note{text-align:center;font-size:11px;color:var(--text3);line-height:1.6}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.panel{display:none}
+.panel.active{display:block}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">
+    <div class="logo-icon">📈</div>
+    <div class="logo-title">Kraken Signals</div>
+    <div class="logo-sub" id="logoSub">Smart crypto trading signals</div>
+  </div>
+
+  <div class="lang-row">
+    <button class="lang-btn active" onclick="setLang('en')" id="langEn">🇬🇧 EN</button>
+    <button class="lang-btn" onclick="setLang('fa')" id="langFa">🇮🇷 FA</button>
+    <button class="lang-btn" onclick="setLang('es')" id="langEs">🇪🇸 ES</button>
+  </div>
+
+  <!-- LOGIN / REGISTER CARD -->
+  <div class="card" id="authCard">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showPanel('login')" id="tabLogin"></button>
+      <button class="tab-btn" onclick="showPanel('register')" id="tabRegister"></button>
+    </div>
+
+    <div id="alertBox" class="alert"></div>
+
+    <!-- LOGIN PANEL -->
+    <div class="panel active" id="panelLogin">
+      <div class="form-group">
+        <label class="form-label" id="lEmail"></label>
+        <input class="form-input" type="email" id="loginEmail" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="lPassword"></label>
+        <div class="password-wrap">
+          <input class="form-input" type="password" id="loginPassword" autocomplete="current-password">
+          <button class="eye-btn" onclick="togglePwd('loginPassword',this)">👁</button>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="doLogin()" id="btnLogin"></button>
+      <div class="forgot-link"><a onclick="showPanel('forgot')" id="lForgot"></a></div>
+    </div>
+
+    <!-- REGISTER PANEL -->
+    <div class="panel" id="panelRegister">
+      <div class="form-group">
+        <label class="form-label" id="lInviteCode"></label>
+        <input class="form-input" type="text" id="regInvite" placeholder="XXXX-XXXX-XXXX">
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="lFullName"></label>
+        <input class="form-input" type="text" id="regName">
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="lEmailReg"></label>
+        <input class="form-input" type="email" id="regEmail" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="lPasswordReg"></label>
+        <div class="password-wrap">
+          <input class="form-input" type="password" id="regPassword" autocomplete="new-password" oninput="checkStrength(this.value)">
+          <button class="eye-btn" onclick="togglePwd('regPassword',this)">👁</button>
+        </div>
+        <div class="strength-bar"><div class="strength-fill" id="strengthFill" style="width:0%"></div></div>
+        <div class="strength-label" id="strengthLabel"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="lConfirmPwd"></label>
+        <div class="password-wrap">
+          <input class="form-input" type="password" id="regConfirm" autocomplete="new-password">
+          <button class="eye-btn" onclick="togglePwd('regConfirm',this)">👁</button>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="doRegister()" id="btnRegister"></button>
+      <div class="invite-note" id="lInviteNote"></div>
+    </div>
+
+    <!-- FORGOT PASSWORD PANEL -->
+    <div class="panel" id="panelForgot">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.6" id="lForgotDesc"></div>
+      <div class="form-group">
+        <label class="form-label" id="lEmailForgot"></label>
+        <input class="form-input" type="email" id="forgotEmail">
+      </div>
+      <button class="btn-primary" onclick="doForgot()" id="btnForgot"></button>
+      <div class="forgot-link" style="margin-top:0.75rem"><a onclick="showPanel('login')" id="lBackLogin"></a></div>
+    </div>
+
+    <!-- RESET PASSWORD PANEL -->
+    <div class="panel" id="panelReset">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.6" id="lResetDesc"></div>
+      <div class="form-group">
+        <label class="form-label" id="lNewPwd"></label>
+        <div class="password-wrap">
+          <input class="form-input" type="password" id="resetPassword" oninput="checkStrength(this.value)">
+          <button class="eye-btn" onclick="togglePwd('resetPassword',this)">👁</button>
+        </div>
+        <div class="strength-bar"><div class="strength-fill" id="strengthFill2" style="width:0%"></div></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="lConfirmNewPwd"></label>
+        <div class="password-wrap">
+          <input class="form-input" type="password" id="resetConfirm">
+          <button class="eye-btn" onclick="togglePwd('resetConfirm',this)">👁</button>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="doReset()" id="btnReset"></button>
+    </div>
+  </div>
+
+  <!-- PLAN INFO -->
+  <div class="plan-chips" id="planChips">
+    <div class="plan-chip free"><span>🆓</span><div id="planFreeLabel"></div></div>
+    <div class="plan-chip plus"><span>⚡</span><div id="planPlusLabel"></div></div>
+    <div class="plan-chip pro"><span>🚀</span><div id="planProLabel"></div></div>
+  </div>
+
+  <div class="footer-note" id="footerNote"></div>
+</div>
+
+<script>
+const T={
+  en:{
+    logoSub:'Smart crypto trading signals',
+    login:'Sign In',register:'Create Account',
+    email:'Email address',password:'Password',
+    forgotLink:'Forgot password?',
+    btnLogin:'Sign In',btnRegister:'Create Account',
+    inviteCode:'Invitation code',fullName:'Full name',
+    emailReg:'Email address',passwordReg:'Password',confirmPwd:'Confirm password',
+    btnForgot:'Send reset link',forgotDesc:'Enter your email and we\'ll send you a link to reset your password.',
+    emailForgot:'Email address',backLogin:'Back to sign in',
+    resetDesc:'Enter your new password below.',newPwd:'New password',confirmNewPwd:'Confirm new password',btnReset:'Reset Password',
+    inviteNote:'You need an invitation code to create an account.',
+    weak:'Weak',fair:'Fair',good:'Good',strong:'Strong',
+    planFree:'Free',planPlus:'Plus',planPro:'Pro',
+    footer:'Secure · Encrypted · Private',
+    errEmail:'Please enter a valid email',errPwd:'Password must be at least 8 characters',
+    errMatch:'Passwords do not match',errInvite:'Please enter your invitation code',
+    errName:'Please enter your name',
+    successForgot:'Reset link sent! Check your email.',
+    successReset:'Password updated! You can now sign in.',
+    successRegister:'Account created! You can now sign in.',
+    loggingIn:'Signing in...',registering:'Creating account...',sending:'Sending...',
+  },
+  fa:{
+    logoSub:'سیگنال‌های هوشمند معاملات کریپتو',
+    login:'ورود',register:'ثبت‌نام',
+    email:'آدرس ایمیل',password:'رمز عبور',
+    forgotLink:'رمز عبور را فراموش کردید؟',
+    btnLogin:'ورود',btnRegister:'ایجاد حساب',
+    inviteCode:'کد دعوت',fullName:'نام کامل',
+    emailReg:'آدرس ایمیل',passwordReg:'رمز عبور',confirmPwd:'تأیید رمز عبور',
+    btnForgot:'ارسال لینک بازیابی',forgotDesc:'ایمیل خود را وارد کنید تا لینک بازیابی رمز عبور برایتان ارسال شود.',
+    emailForgot:'آدرس ایمیل',backLogin:'بازگشت به صفحه ورود',
+    resetDesc:'رمز عبور جدید خود را وارد کنید.',newPwd:'رمز عبور جدید',confirmNewPwd:'تأیید رمز عبور جدید',btnReset:'تغییر رمز عبور',
+    inviteNote:'برای ایجاد حساب به کد دعوت نیاز دارید.',
+    weak:'ضعیف',fair:'متوسط',good:'خوب',strong:'قوی',
+    planFree:'رایگان',planPlus:'پلاس',planPro:'حرفه‌ای',
+    footer:'امن · رمزگذاری شده · خصوصی',
+    errEmail:'لطفاً یک ایمیل معتبر وارد کنید',errPwd:'رمز عبور باید حداقل ۸ کاراکتر باشد',
+    errMatch:'رمزهای عبور مطابقت ندارند',errInvite:'لطفاً کد دعوت را وارد کنید',
+    errName:'لطفاً نام خود را وارد کنید',
+    successForgot:'لینک بازیابی ارسال شد! ایمیل خود را بررسی کنید.',
+    successReset:'رمز عبور تغییر یافت! اکنون می‌توانید وارد شوید.',
+    successRegister:'حساب ایجاد شد! اکنون می‌توانید وارد شوید.',
+    loggingIn:'در حال ورود...',registering:'در حال ایجاد حساب...',sending:'در حال ارسال...',
+  },
+  es:{
+    logoSub:'Señales inteligentes de trading cripto',
+    login:'Iniciar sesión',register:'Crear cuenta',
+    email:'Correo electrónico',password:'Contraseña',
+    forgotLink:'¿Olvidaste tu contraseña?',
+    btnLogin:'Iniciar sesión',btnRegister:'Crear cuenta',
+    inviteCode:'Código de invitación',fullName:'Nombre completo',
+    emailReg:'Correo electrónico',passwordReg:'Contraseña',confirmPwd:'Confirmar contraseña',
+    btnForgot:'Enviar enlace',forgotDesc:'Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.',
+    emailForgot:'Correo electrónico',backLogin:'Volver al inicio de sesión',
+    resetDesc:'Ingresa tu nueva contraseña.',newPwd:'Nueva contraseña',confirmNewPwd:'Confirmar nueva contraseña',btnReset:'Restablecer contraseña',
+    inviteNote:'Necesitas un código de invitación para crear una cuenta.',
+    weak:'Débil',fair:'Regular',good:'Buena',strong:'Fuerte',
+    planFree:'Gratis',planPlus:'Plus',planPro:'Pro',
+    footer:'Seguro · Cifrado · Privado',
+    errEmail:'Ingresa un correo válido',errPwd:'La contraseña debe tener al menos 8 caracteres',
+    errMatch:'Las contraseñas no coinciden',errInvite:'Ingresa tu código de invitación',
+    errName:'Ingresa tu nombre',
+    successForgot:'¡Enlace enviado! Revisa tu correo.',
+    successReset:'¡Contraseña actualizada! Ya puedes iniciar sesión.',
+    successRegister:'¡Cuenta creada! Ya puedes iniciar sesión.',
+    loggingIn:'Iniciando sesión...',registering:'Creando cuenta...',sending:'Enviando...',
+  }
+};
+
+let lang='en';
+
+function t(k){return T[lang][k]||T.en[k]||k;}
+
+function setLang(l){
+  lang=l;
+  document.body.style.direction=l==='fa'?'rtl':'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('lang'+l.charAt(0).toUpperCase()+l.slice(1)).classList.add('active');
+  applyLang();
+  localStorage.setItem('ks_lang',l);
+}
+
+function applyLang(){
+  const ids={
+    logoSub:'logoSub',tabLogin:'login',tabRegister:'register',
+    lEmail:'email',lPassword:'password',lForgot:'forgotLink',btnLogin:'btnLogin',
+    lInviteCode:'inviteCode',lFullName:'fullName',lEmailReg:'emailReg',
+    lPasswordReg:'passwordReg',lConfirmPwd:'confirmPwd',btnRegister:'btnRegister',
+    lInviteNote:'inviteNote',lForgotDesc:'forgotDesc',lEmailForgot:'emailForgot',
+    btnForgot:'btnForgot',lBackLogin:'backLogin',lResetDesc:'resetDesc',
+    lNewPwd:'newPwd',lConfirmNewPwd:'confirmNewPwd',btnReset:'btnReset',
+    planFreeLabel:'planFree',planPlusLabel:'planPlus',planProLabel:'planPro',
+    footerNote:'footer',
+  };
+  Object.entries(ids).forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.textContent=t(key);});
+}
+
+function showPanel(name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel'+name.charAt(0).toUpperCase()+name.slice(1))?.classList.add('active');
+  clearAlert();
+  const tabs=document.querySelectorAll('.tab-btn');
+  if(name==='login'){tabs[0]?.classList.add('active');tabs[1]?.classList.remove('active');}
+  else if(name==='register'){tabs[1]?.classList.add('active');tabs[0]?.classList.remove('active');}
+  else{tabs.forEach(t=>t.classList.remove('active'));}
+}
+
+function showAlert(msg,type='error'){
+  const el=document.getElementById('alertBox');
+  el.textContent=msg;el.className=`alert ${type} show`;
+}
+function clearAlert(){const el=document.getElementById('alertBox');el.className='alert';}
+
+function togglePwd(id,btn){
+  const inp=document.getElementById(id);
+  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
+  else{inp.type='password';btn.textContent='👁';}
+}
+
+function checkStrength(pwd){
+  let score=0;
+  if(pwd.length>=8)score++;if(pwd.length>=12)score++;
+  if(/[A-Z]/.test(pwd))score++;if(/[0-9]/.test(pwd))score++;if(/[^A-Za-z0-9]/.test(pwd))score++;
+  const pct=[0,25,50,75,100][Math.min(score,4)];
+  const colors=['#E24B4A','#BA7517','#4A90D9','#1D9E75','#1D9E75'];
+  const labels=[t('weak'),t('weak'),t('fair'),t('good'),t('strong')];
+  ['strengthFill','strengthFill2'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.width=pct+'%';el.style.background=colors[Math.min(score,4)];}});
+  const sl=document.getElementById('strengthLabel');if(sl)sl.textContent=pwd.length>0?labels[Math.min(score,4)]:'';
+}
+
+function setLoading(btnId,loadingKey,isLoading){
+  const btn=document.getElementById(btnId);if(!btn)return;
+  if(isLoading){btn.innerHTML=`<span class="spinner"></span>${t(loadingKey)}`;btn.disabled=true;}
+  else{btn.textContent=t(btnId==='btnLogin'?'btnLogin':btnId==='btnRegister'?'btnRegister':btnId==='btnForgot'?'btnForgot':'btnReset');btn.disabled=false;}
+}
+
+function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const pwd=document.getElementById('loginPassword').value;
+  if(!email||!email.includes('@')){showAlert(t('errEmail'));return;}
+  if(!pwd||pwd.length<8){showAlert(t('errPwd'));return;}
+  setLoading('btnLogin','loggingIn',true);
+  // Phase 2: will call backend API
+  // For now simulate with localStorage demo account
+  setTimeout(()=>{
+    const users=JSON.parse(localStorage.getItem('ks_users')||'[]');
+    const user=users.find(u=>u.email===email&&u.password===btoa(pwd));
+    if(user){
+      localStorage.setItem('ks_session',JSON.stringify({id:user.id,name:user.name,email:user.email,plan:user.plan,lang}));
+      window.location.href='index.html';
+    }else{
+      showAlert('Invalid email or password');
+      setLoading('btnLogin','btnLogin',false);
+    }
+  },800);
+}
+
+function doRegister(){
+  const invite=document.getElementById('regInvite').value.trim();
+  const name=document.getElementById('regName').value.trim();
+  const email=document.getElementById('regEmail').value.trim();
+  const pwd=document.getElementById('regPassword').value;
+  const confirm=document.getElementById('regConfirm').value;
+  if(!invite){showAlert(t('errInvite'));return;}
+  if(!name){showAlert(t('errName'));return;}
+  if(!email||!email.includes('@')){showAlert(t('errEmail'));return;}
+  if(!pwd||pwd.length<8){showAlert(t('errPwd'));return;}
+  if(pwd!==confirm){showAlert(t('errMatch'));return;}
+  setLoading('btnRegister','registering',true);
+  // Phase 2: will validate invite code via backend API
+  setTimeout(()=>{
+    const invites=JSON.parse(localStorage.getItem('ks_invites')||'["DEMO-2024-FREE","PLUS-2024-TEST","PRO-2024-TEST"]');
+    if(!invites.includes(invite.toUpperCase())){
+      showAlert('Invalid or expired invitation code.');
+      setLoading('btnRegister','btnRegister',false);return;
+    }
+    const plan=invite.startsWith('PRO')?'pro':invite.startsWith('PLUS')?'plus':'free';
+    const users=JSON.parse(localStorage.getItem('ks_users')||'[]');
+    if(users.find(u=>u.email===email)){showAlert('Email already registered.');setLoading('btnRegister','btnRegister',false);return;}
+    const user={id:Date.now().toString(),name,email,password:btoa(pwd),plan,created:Date.now(),expires:Date.now()+30*24*3600*1000};
+    users.push(user);localStorage.setItem('ks_users',JSON.stringify(users));
+    showAlert(t('successRegister'),'success');
+    setTimeout(()=>showPanel('login'),2000);
+    setLoading('btnRegister','btnRegister',false);
+  },800);
+}
+
+function doForgot(){
+  const email=document.getElementById('forgotEmail').value.trim();
+  if(!email||!email.includes('@')){showAlert(t('errEmail'));return;}
+  setLoading('btnForgot','sending',true);
+  setTimeout(()=>{
+    showAlert(t('successForgot'),'success');
+    setLoading('btnForgot','btnForgot',false);
+  },1000);
+}
+
+function doReset(){
+  const pwd=document.getElementById('resetPassword').value;
+  const confirm=document.getElementById('resetConfirm').value;
+  if(!pwd||pwd.length<8){showAlert(t('errPwd'));return;}
+  if(pwd!==confirm){showAlert(t('errMatch'));return;}
+  setLoading('btnReset','sending',true);
+  setTimeout(()=>{
+    showAlert(t('successReset'),'success');
+    setTimeout(()=>showPanel('login'),2000);
+    setLoading('btnReset','btnReset',false);
+  },1000);
+}
+
+// Check for invite code in URL
+const urlParams=new URLSearchParams(window.location.search);
+const inviteParam=urlParams.get('invite');
+if(inviteParam){
+  document.getElementById('regInvite').value=inviteParam;
+  showPanel('register');
+}
+
+// Load saved language
+const savedLang=localStorage.getItem('ks_lang')||'en';
+setLang(savedLang);
+</script>
+</body>
+</html>
