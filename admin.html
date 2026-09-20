@@ -48,6 +48,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .plan-free{background:var(--surface2);color:var(--text2)}
 .plan-plus{background:var(--blue-dim);color:var(--blue)}
 .plan-pro{background:var(--green-dim);color:var(--green)}
+.plan-platinum{background:rgba(176,141,87,0.15);color:#D4AF6A}
 .status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px}
 .dot-active{background:var(--green)}
 .dot-disabled{background:var(--red)}
@@ -125,11 +126,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="card">
       <div class="section-title"><span>System Info</span></div>
       <div style="font-size:13px;color:var(--text2);line-height:2">
-        <div>Version: <strong style="color:var(--text)">Phase 1.5 (Pre-Railway)</strong></div>
-        <div>Backend: <strong style="color:var(--amber)">Not connected (Phase 2)</strong></div>
-        <div>Database: <strong style="color:var(--amber)">localStorage (temporary)</strong></div>
-        <div>Telegram Bot: <strong style="color:var(--amber)">Not configured</strong></div>
-        <div>Auto-trade Engine: <strong style="color:var(--amber)">Frontend only</strong></div>
+        <div>Version: <strong style="color:var(--text)">Phase 2 (Railway backend)</strong></div>
+        <div>Backend: <strong style="color:var(--green)">Connected</strong> — <span style="font-family:monospace;font-size:11px">wisesignals-backend-production.up.railway.app</span></div>
+        <div>Database: <strong style="color:var(--green)">SQLite on persistent volume</strong></div>
+        <div>Telegram Bot: <strong style="color:var(--amber)">Not configured yet</strong></div>
+        <div>Auto-trade Engine: <strong style="color:var(--green)">Server-side, 5-min cycle</strong></div>
       </div>
     </div>
     <div class="card">
@@ -153,6 +154,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <option value="free">Free</option>
         <option value="plus">Plus</option>
         <option value="pro">Pro</option>
+        <option value="platinum">Platinum</option>
       </select>
     </div>
     <div class="form-group"><label class="form-label">Account Expires</label>
@@ -182,6 +184,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <option value="free">Free</option>
         <option value="plus">Plus</option>
         <option value="pro">Pro</option>
+        <option value="platinum">Platinum</option>
       </select>
     </div>
     <div class="form-group"><label class="form-label">Status</label>
@@ -217,6 +220,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <option value="free">Free</option>
         <option value="plus">Plus</option>
         <option value="pro">Pro</option>
+        <option value="platinum">Platinum</option>
       </select>
     </div>
     <div class="form-group"><label class="form-label">Link expires in</label>
@@ -260,47 +264,70 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="toast" id="toast"></div>
 
 <script>
-// ── AUTH CHECK ───────────────────────────────────────────────
-const adminSession=localStorage.getItem('ks_admin_session');
-if(!adminSession){
-  const pwd=prompt('Admin password:');
-  const stored=localStorage.getItem('ks_admin_pwd')||'admin123';
-  if(pwd!==stored){alert('Invalid password');window.location.href='login.html';}
-  else{localStorage.setItem('ks_admin_session',Date.now().toString());}
+// ── API ──────────────────────────────────────────────────────
+const API_BASE='https://wisesignals-backend-production.up.railway.app';
+let adminToken=null;
+
+async function adminApiFetch(path,options={},retried){
+  const res=await fetch(API_BASE+path,{
+    ...options,
+    headers:{'Content-Type':'application/json',...(adminToken?{'Authorization':'Bearer '+adminToken}:{}),...(options.headers||{})}
+  });
+  if(res.status===401&&!retried){
+    adminToken=null;sessionStorage.removeItem('ks_admin_token');
+    await ensureAdminAuth();
+    return adminApiFetch(path,options,true);
+  }
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(data.error||'Request failed');
+  return data;
 }
 
-function logout(){localStorage.removeItem('ks_admin_session');window.location.href='login.html';}
+async function ensureAdminAuth(){
+  adminToken=sessionStorage.getItem('ks_admin_token');
+  if(adminToken)return;
+  for(;;){
+    const pwd=prompt('Admin password:');
+    if(pwd===null){window.location.href='login.html';return;}
+    try{
+      const res=await fetch(API_BASE+'/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok)throw new Error(data.error||'Invalid password');
+      adminToken=data.token;sessionStorage.setItem('ks_admin_token',adminToken);return;
+    }catch(e){alert(e.message||'Invalid password');}
+  }
+}
+
+function logout(){adminToken=null;sessionStorage.removeItem('ks_admin_token');window.location.href='login.html';}
 
 // ── DATA ─────────────────────────────────────────────────────
-function getUsers(){return JSON.parse(localStorage.getItem('ks_users')||'[]');}
-function saveUsers(u){localStorage.setItem('ks_users',JSON.stringify(u));}
-function getInvites(){return JSON.parse(localStorage.getItem('ks_invites_full')||'[]');}
-function saveInvites(i){localStorage.setItem('ks_invites_full',JSON.stringify(i));}
+async function getUsers(){return adminApiFetch('/api/admin/users');}
+async function getInvites(){return adminApiFetch('/api/admin/invites');}
 
 // ── STATS ────────────────────────────────────────────────────
-function updateStats(){
-  const users=getUsers(),invites=getInvites();
-  const now=Date.now();
-  const active=users.filter(u=>u.status!=='disabled'&&(u.expires===0||u.expires>now)).length;
-  const expiring=users.filter(u=>u.expires>0&&u.expires-now<7*24*3600*1000&&u.expires>now).length;
-  const openInv=invites.filter(i=>i.expires>now&&!i.used).length;
-  document.getElementById('statTotal').textContent=users.length;
-  document.getElementById('statActive').textContent=active;
-  document.getElementById('statExpiring').textContent=expiring;
-  document.getElementById('statInvites').textContent=openInv;
+async function updateStats(){
+  try{
+    const s=await adminApiFetch('/api/admin/stats');
+    document.getElementById('statTotal').textContent=s.total;
+    document.getElementById('statActive').textContent=s.active;
+    document.getElementById('statExpiring').textContent=s.expiring;
+    document.getElementById('statInvites').textContent=s.openInvites;
+  }catch(e){showToast(e.message||'Could not load stats');}
 }
 
 // ── USERS ────────────────────────────────────────────────────
-function renderUsers(){
-  const users=getUsers(),el=document.getElementById('usersList');
-  if(!users.length){el.innerHTML='<div class="empty">No users yet. Generate an invitation link to add users.</div>';return;}
+let usersCache=[];
+async function renderUsers(){
+  const el=document.getElementById('usersList');
+  try{usersCache=await getUsers();}catch(e){el.innerHTML=`<div class="empty">Could not load users: ${e.message}</div>`;return;}
+  if(!usersCache.length){el.innerHTML='<div class="empty">No users yet. Generate an invitation link to add users.</div>';return;}
   const now=Date.now();
-  el.innerHTML=users.map(u=>{
-    const expired=u.expires>0&&u.expires<now;
-    const expiringSoon=u.expires>0&&u.expires-now<7*24*3600*1000&&u.expires>now;
+  el.innerHTML=usersCache.map(u=>{
+    const expired=u.expires_at>0&&u.expires_at<now;
+    const expiringSoon=u.expires_at>0&&u.expires_at-now<7*24*3600*1000&&u.expires_at>now;
     const status=u.status==='disabled'?'disabled':expired?'expired':'active';
     const dotClass=status==='active'?'dot-active':status==='expired'?'dot-expired':'dot-disabled';
-    const expiryStr=u.expires===0?'Never':new Date(u.expires).toLocaleDateString('en-CA');
+    const expiryStr=!u.expires_at?'Never':new Date(u.expires_at).toLocaleDateString('en-CA');
     const planClass=`plan-${u.plan||'free'}`;
     return`<div class="user-row">
       <div class="user-avatar">${(u.name||'U').charAt(0).toUpperCase()}</div>
@@ -325,22 +352,21 @@ function openNewUser(){
   document.getElementById('modalUser').classList.add('show');
 }
 
-function saveUser(){
+async function saveUser(){
   const name=document.getElementById('uName').value.trim();
   const email=document.getElementById('uEmail').value.trim();
-  const pwd=document.getElementById('uPwd').value;
+  const password=document.getElementById('uPwd').value;
   const plan=document.getElementById('uPlan').value;
-  const days=parseInt(document.getElementById('uExpiry').value);
-  if(!name||!email||!pwd||pwd.length<8){showToast('Please fill all fields (password min 8 chars)');return;}
-  const users=getUsers();
-  if(users.find(u=>u.email===email)){showToast('Email already exists');return;}
-  const expires=days===0?0:Date.now()+days*24*3600*1000;
-  users.push({id:Date.now().toString(),name,email,password:btoa(pwd),plan,status:'active',created:Date.now(),expires});
-  saveUsers(users);closeModal('modalUser');renderUsers();updateStats();showToast('User added ✅');
+  const expiresDays=parseInt(document.getElementById('uExpiry').value);
+  if(!name||!email||!password||password.length<8){showToast('Please fill all fields (password min 8 chars)');return;}
+  try{
+    await adminApiFetch('/api/admin/users',{method:'POST',body:JSON.stringify({name,email,password,plan,expiresDays})});
+    closeModal('modalUser');await renderUsers();await updateStats();showToast('User added ✅');
+  }catch(e){showToast(e.message||'Could not add user');}
 }
 
 function openEditUser(id){
-  const users=getUsers(),u=users.find(x=>x.id===id);if(!u)return;
+  const u=usersCache.find(x=>x.id===id);if(!u)return;
   document.getElementById('editUserId').value=id;
   document.getElementById('editName').value=u.name;
   document.getElementById('editPlan').value=u.plan||'free';
@@ -350,44 +376,53 @@ function openEditUser(id){
   document.getElementById('modalEditUser').classList.add('show');
 }
 
-function updateUser(){
+async function updateUser(){
   const id=document.getElementById('editUserId').value;
-  const users=getUsers(),idx=users.findIndex(u=>u.id===id);if(idx<0)return;
-  users[idx].name=document.getElementById('editName').value.trim()||users[idx].name;
-  users[idx].plan=document.getElementById('editPlan').value;
-  users[idx].status=document.getElementById('editStatus').value;
-  const days=parseInt(document.getElementById('editExpiry').value);
-  if(days===9999)users[idx].expires=0;
-  else if(days>0)users[idx].expires=(users[idx].expires&&users[idx].expires>Date.now()?users[idx].expires:Date.now())+days*24*3600*1000;
-  const newPwd=document.getElementById('editPwd').value;
-  if(newPwd&&newPwd.length>=8)users[idx].password=btoa(newPwd);
-  saveUsers(users);closeModal('modalEditUser');renderUsers();updateStats();showToast('User updated ✅');
+  const name=document.getElementById('editName').value.trim();
+  const plan=document.getElementById('editPlan').value;
+  const status=document.getElementById('editStatus').value;
+  const extendDays=parseInt(document.getElementById('editExpiry').value);
+  const newPassword=document.getElementById('editPwd').value;
+  const body={name,plan,status};
+  if(extendDays>0)body.extendDays=extendDays;
+  if(newPassword&&newPassword.length>=8)body.newPassword=newPassword;
+  try{
+    await adminApiFetch('/api/admin/users/'+id,{method:'PUT',body:JSON.stringify(body)});
+    closeModal('modalEditUser');await renderUsers();await updateStats();showToast('User updated ✅');
+  }catch(e){showToast(e.message||'Could not update user');}
 }
 
-function toggleUser(id){
-  const users=getUsers(),idx=users.findIndex(u=>u.id===id);if(idx<0)return;
-  users[idx].status=users[idx].status==='disabled'?'active':'disabled';
-  saveUsers(users);renderUsers();updateStats();showToast(`User ${users[idx].status} ✅`);
+async function toggleUser(id){
+  const u=usersCache.find(x=>x.id===id);if(!u)return;
+  const newStatus=u.status==='disabled'?'active':'disabled';
+  try{
+    await adminApiFetch('/api/admin/users/'+id,{method:'PUT',body:JSON.stringify({status:newStatus})});
+    await renderUsers();await updateStats();showToast(`User ${newStatus} ✅`);
+  }catch(e){showToast(e.message||'Could not update user');}
 }
 
-function deleteUser(id){
+async function deleteUser(id){
   if(!confirm('Delete this user? This cannot be undone.'))return;
-  const users=getUsers().filter(u=>u.id!==id);
-  saveUsers(users);renderUsers();updateStats();showToast('User deleted');
+  try{
+    await adminApiFetch('/api/admin/users/'+id,{method:'DELETE'});
+    await renderUsers();await updateStats();showToast('User deleted');
+  }catch(e){showToast(e.message||'Could not delete user');}
 }
 
 // ── INVITES ──────────────────────────────────────────────────
-function renderInvites(){
-  const invites=getInvites(),el=document.getElementById('invitesList'),now=Date.now();
+async function renderInvites(){
+  const el=document.getElementById('invitesList'),now=Date.now();
+  let invites;
+  try{invites=await getInvites();}catch(e){el.innerHTML=`<div class="empty">Could not load invites: ${e.message}</div>`;return;}
   if(!invites.length){el.innerHTML='<div class="empty">No invitation links yet.</div>';return;}
   el.innerHTML=invites.map(inv=>{
-    const expired=inv.expires<now;const used=inv.used;
+    const expired=inv.expires_at<now;const used=!!inv.used;
     const status=used?'Used':expired?'Expired':'Active';
     const statusColor=used?'var(--text3)':expired?'var(--red)':'var(--green)';
     return`<div class="invite-row">
       <div style="flex:1;min-width:0">
         <div class="invite-code">${inv.code}</div>
-        <div class="invite-meta" style="color:${statusColor}">${status} · Plan: ${inv.plan?.toUpperCase()||'FREE'} · Expires: ${new Date(inv.expires).toLocaleDateString('en-CA')}</div>
+        <div class="invite-meta" style="color:${statusColor}">${status} · Plan: ${inv.plan?.toUpperCase()||'FREE'} · Expires: ${new Date(inv.expires_at).toLocaleDateString('en-CA')}</div>
       </div>
       <div style="display:flex;gap:6px">
         ${!used&&!expired?`<button class="btn btn-ghost btn-sm" onclick="copyInviteCode('${inv.code}')">Copy</button>`:''}
@@ -399,26 +434,21 @@ function renderInvites(){
 
 function openNewInvite(){document.getElementById('modalInvite').classList.add('show');}
 
-function generateInvite(){
+async function generateInvite(){
   const plan=document.getElementById('invPlan').value;
-  const linkHours=parseInt(document.getElementById('invLinkExpiry').value);
-  const userDays=parseInt(document.getElementById('invUserExpiry').value);
-  const code=`${plan.toUpperCase()}-${Math.random().toString(36).substring(2,6).toUpperCase()}-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
-  const invites=getInvites();
-  invites.unshift({code,plan,expires:Date.now()+linkHours*3600*1000,userExpiry:userDays,used:false,created:Date.now()});
-  saveInvites(invites);
-  // Also add to simple invite list for login page
-  const simpleInvites=JSON.parse(localStorage.getItem('ks_invites')||'[]');
-  simpleInvites.push(code);localStorage.setItem('ks_invites',JSON.stringify(simpleInvites));
-  closeModal('modalInvite');
-  const link=`${window.location.origin}${window.location.pathname.replace('admin.html','login.html')}?invite=${code}`;
-  document.getElementById('generatedLink').textContent=link;
-  document.getElementById('generatedMeta').textContent=`Plan: ${plan.toUpperCase()} · Link valid: ${linkHours}h · User expires: ${userDays===0?'Never':userDays+' days'}`;
-  document.getElementById('modalInviteResult').classList.add('show');
-  renderInvites();updateStats();
+  const linkExpiryHours=parseInt(document.getElementById('invLinkExpiry').value);
+  const userExpiryDays=parseInt(document.getElementById('invUserExpiry').value);
+  try{
+    const result=await adminApiFetch('/api/admin/invites',{method:'POST',body:JSON.stringify({plan,linkExpiryHours,userExpiryDays})});
+    closeModal('modalInvite');
+    const link=`${window.location.origin}${window.location.pathname.replace('admin.html','login.html')}?invite=${result.code}`;
+    document.getElementById('generatedLink').textContent=link;
+    document.getElementById('generatedMeta').textContent=`Plan: ${plan.toUpperCase()} · Link valid: ${linkExpiryHours}h · User expires: ${userExpiryDays===0?'Never':userExpiryDays+' days'}`;
+    document.getElementById('modalInviteResult').classList.add('show');
+    await renderInvites();await updateStats();
+  }catch(e){showToast(e.message||'Could not generate invite');}
 }
 
-let linkToCopy='';
 function copyLink(){
   const link=document.getElementById('generatedLink').textContent;
   navigator.clipboard?.writeText(link).then(()=>showToast('Link copied! ✅')).catch(()=>{});
@@ -427,20 +457,24 @@ function copyInviteCode(code){
   const link=`${window.location.origin}${window.location.pathname.replace('admin.html','login.html')}?invite=${code}`;
   navigator.clipboard?.writeText(link).then(()=>showToast('Link copied! ✅')).catch(()=>{});
 }
-function deleteInvite(code){
+async function deleteInvite(code){
   if(!confirm('Delete this invitation?'))return;
-  const invites=getInvites().filter(i=>i.code!==code);saveInvites(invites);
-  const simple=JSON.parse(localStorage.getItem('ks_invites')||'[]').filter(c=>c!==code);
-  localStorage.setItem('ks_invites',JSON.stringify(simple));
-  renderInvites();updateStats();showToast('Invite deleted');
+  try{
+    await adminApiFetch('/api/admin/invites/'+code,{method:'DELETE'});
+    await renderInvites();await updateStats();showToast('Invite deleted');
+  }catch(e){showToast(e.message||'Could not delete invite');}
 }
 
-function changeAdminPwd(){
+async function changeAdminPwd(){
   const p1=document.getElementById('newAdminPwd').value;
   const p2=document.getElementById('confirmAdminPwd').value;
   if(!p1||p1.length<8){showToast('Password min 8 characters');return;}
   if(p1!==p2){showToast('Passwords do not match');return;}
-  localStorage.setItem('ks_admin_pwd',p1);showToast('Admin password updated ✅');
+  try{
+    await adminApiFetch('/api/admin/password',{method:'PUT',body:JSON.stringify({newPassword:p1})});
+    document.getElementById('newAdminPwd').value='';document.getElementById('confirmAdminPwd').value='';
+    showToast('Admin password updated ✅');
+  }catch(e){showToast(e.message||'Could not update password');}
 }
 
 // ── UI HELPERS ───────────────────────────────────────────────
@@ -457,7 +491,11 @@ function showToast(msg){
 }
 
 // ── INIT ─────────────────────────────────────────────────────
-updateStats();renderUsers();renderInvites();
+(async function init(){
+  await ensureAdminAuth();
+  if(!adminToken)return; // ensureAdminAuth already redirected to login.html
+  await Promise.all([updateStats(),renderUsers(),renderInvites()]);
+})();
 </script>
 </body>
 </html>
