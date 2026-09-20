@@ -121,6 +121,20 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
 .toast.green{background:var(--green)}
 .toast.red{background:var(--red)}
 .toast.amber{background:var(--amber)}
+.terms-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2000;display:flex;align-items:center;justify-content:center;padding:1rem}
+.terms-modal{background:var(--bg-primary);border-radius:var(--radius-lg);max-width:480px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
+.terms-header{padding:1.25rem 1.25rem 0.75rem;border-bottom:0.5px solid var(--border)}
+.terms-header h2{font-size:16px;font-weight:600}
+.terms-body{overflow-y:auto;padding:1rem 1.25rem;flex:1}
+.terms-section{margin-bottom:1rem}
+.terms-section h3{font-size:13px;font-weight:600;margin-bottom:4px}
+.terms-section p{font-size:12px;color:var(--text-secondary);line-height:1.6}
+.terms-ack{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text-primary);margin-bottom:10px;line-height:1.5}
+.terms-ack input{margin-top:2px;flex-shrink:0}
+.terms-sig{width:100%;padding:9px 12px;font-size:13px;border-radius:var(--radius-md);border:0.5px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);margin-top:6px}
+.terms-footer{padding:1rem 1.25rem;border-top:0.5px solid var(--border)}
+.terms-footer button{width:100%;padding:11px;font-size:14px;font-weight:600;background:var(--green);color:#fff;border:none;border-radius:var(--radius-md);cursor:pointer}
+.terms-footer button:disabled{opacity:0.4;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -231,6 +245,11 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
     </div>
     <div class="settings-section">
       <div class="settings-title" id="lApiKeys">Kraken API Keys</div>
+      <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px;margin-bottom:10px">
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px" id="lNoKrakenAccount">Don't have a Kraken account yet?</div>
+        <a href="https://invite.kraken.com/JDNW/clvvlxvq" target="_blank" rel="noopener" style="display:block;text-align:center;padding:9px;font-size:13px;font-weight:500;border-radius:var(--radius-md);background:var(--green);color:#fff;text-decoration:none;margin-bottom:10px" id="btnKrakenSignup">Create a Kraken account</a>
+        <div style="font-size:11px;color:var(--text-tertiary);line-height:1.8" id="lApiGuide"></div>
+      </div>
       <div id="apiKeysList" style="margin-bottom:8px"></div>
       <button onclick="openAddApiKey()" style="width:100%;padding:9px;font-size:13px;border-radius:var(--radius-md);border:0.5px dashed var(--border-strong);background:transparent;color:var(--text-secondary);cursor:pointer" id="btnAddApiKey">+ Add API Key</button>
       <div id="addApiKeyForm" style="display:none;margin-top:10px;background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px">
@@ -296,6 +315,16 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
   </div>
 </div>
 <div id="toast" class="toast"></div>
+<div id="termsOverlay" class="terms-overlay" style="display:none">
+  <div class="terms-modal">
+    <div class="terms-header"><h2 id="termsTitle">Risk Disclosure &amp; Terms of Use</h2></div>
+    <div class="terms-body" id="termsBody"></div>
+    <div class="terms-footer">
+      <div style="margin-bottom:10px"><input type="text" id="termsSignature" class="terms-sig" placeholder="Type your full name to sign"></div>
+      <button id="termsAcceptBtn" onclick="submitTermsAcceptance()" disabled>I Accept &amp; Sign</button>
+    </div>
+  </div>
+</div>
 <script>
 const FEE=0.0026;
 const BASE_COINS=[
@@ -318,6 +347,33 @@ const BASE_COINS=[
 let COINS=[...BASE_COINS];
 let openCard=null,countdown=300,timerInterval=null,currentPrices={},lastData=[],selectedAmounts={};
 let autoQueueTimers={},chartData={},activeChartTab={},toastTimer=null,historicalCache={};
+
+// ── API ──────────────────────────────────────────────────────
+const API_BASE='https://wisesignals-backend-production.up.railway.app';
+let currentUser=null;
+function getToken(){return localStorage.getItem('ks_token');}
+async function apiFetch(path,options={}){
+  const token=getToken();
+  const res=await fetch(API_BASE+path,{
+    ...options,
+    headers:{'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{}),...(options.headers||{})}
+  });
+  if(res.status===401){localStorage.removeItem('ks_token');window.location.href='login.html';throw new Error('Unauthorized');}
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(data.error||'Request failed');
+  return data;
+}
+function daysToTimeframe(days){return{1:'1d',3:'3d',7:'1w',30:'1m'}[days]||'1d';}
+
+async function loadUser(){
+  if(!getToken()){window.location.href='login.html';return null;}
+  try{
+    currentUser=await apiFetch('/api/user/me');
+    return currentUser;
+  }catch(e){
+    window.location.href='login.html';return null;
+  }
+}
 
 // ── LANGUAGE ─────────────────────────────────────────────────
 const L={
@@ -375,6 +431,8 @@ en:{
   profileInfo:'Profile Information',profileName:'Name',profileEmailLabel:'Email',
   profilePlan:'Plan',profileExpiry:'Account expires',profileJoined:'Member since',
   apiKeys:'Kraken API Keys',apiKeyName:'Key name',
+  noKrakenAccount:"Don't have a Kraken account yet?",krakenSignupBtn:'Create a Kraken account',
+  apiGuide:'<b>How to get your API keys:</b><br>1. On Kraken, go to Settings → API<br>2. Click "Generate New Key"<br>3. Enable only <b>Query Funds</b> and <b>Trade</b> — never enable Withdraw<br>4. Copy the API Key and Private Key<br>5. Paste them below and save',
   telegramTitle:'Telegram Notifications',telegramDesc:'Connect Telegram for signal alerts. Available in Phase 2.',
   changePwd:'Change Password',currentPwd:'Current password',newPwdProfile:'New password',
   btnChangePwd:'Update Password',btnLogout:'Sign Out',btnAddApiKey:'+ Add API Key',
@@ -434,6 +492,8 @@ fa:{
   profileInfo:'اطلاعات پروفایل',profileName:'نام',profileEmailLabel:'ایمیل',
   profilePlan:'پلن',profileExpiry:'انقضای حساب',profileJoined:'عضو از',
   apiKeys:'کلیدهای API کراکن',apiKeyName:'نام کلید',
+  noKrakenAccount:'هنوز حساب کراکن ندارید؟',krakenSignupBtn:'ساخت حساب کراکن',
+  apiGuide:'<b>چگونه کلیدهای API را دریافت کنیم:</b><br>۱. در کراکن به Settings → API بروید<br>۲. روی «Generate New Key» کلیک کنید<br>۳. فقط <b>Query Funds</b> و <b>Trade</b> را فعال کنید — هرگز Withdraw را فعال نکنید<br>۴. API Key و Private Key را کپی کنید<br>۵. آن‌ها را در پایین وارد و ذخیره کنید',
   telegramTitle:'نوتیفیکیشن تلگرام',telegramDesc:'برای دریافت سیگنال‌ها تلگرام را متصل کنید. در فاز ۲ فعال می‌شود.',
   changePwd:'تغییر رمز عبور',currentPwd:'رمز عبور فعلی',newPwdProfile:'رمز عبور جدید',
   btnChangePwd:'بروزرسانی رمز عبور',btnLogout:'خروج',btnAddApiKey:'+ افزودن کلید API',
@@ -493,6 +553,8 @@ es:{
   profileInfo:'Información del perfil',profileName:'Nombre',profileEmailLabel:'Correo',
   profilePlan:'Plan',profileExpiry:'Cuenta expira',profileJoined:'Miembro desde',
   apiKeys:'Claves API de Kraken',apiKeyName:'Nombre de clave',
+  noKrakenAccount:'¿Aún no tienes una cuenta de Kraken?',krakenSignupBtn:'Crear una cuenta de Kraken',
+  apiGuide:'<b>Cómo obtener tus claves API:</b><br>1. En Kraken, ve a Settings → API<br>2. Haz clic en "Generate New Key"<br>3. Activa solo <b>Query Funds</b> y <b>Trade</b> — nunca actives Withdraw<br>4. Copia la API Key y la Private Key<br>5. Pégalas abajo y guarda',
   telegramTitle:'Notificaciones Telegram',telegramDesc:'Conecta Telegram para alertas de señales. Disponible en Fase 2.',
   changePwd:'Cambiar contraseña',currentPwd:'Contraseña actual',newPwdProfile:'Nueva contraseña',
   btnChangePwd:'Actualizar contraseña',btnLogout:'Cerrar sesión',btnAddApiKey:'+ Agregar clave API',
@@ -510,8 +572,9 @@ function applyLanguage(){
   const tabKeys=['signals','portfolio','history','auto','settings'];
   tabKeys.forEach(k=>{const el=document.getElementById(`tab-${k}-btn`);if(el)el.textContent=t(k);});
   // Profile tab labels
-  const pm2={lProfileInfo:'profileInfo',lProfileName:'profileName',lProfileEmailLabel:'profileEmailLabel',lProfilePlan:'profilePlan',lProfileExpiry:'profileExpiry',lProfileJoined:'profileJoined',lApiKeys:'apiKeys',lApiKeyName:'apiKeyName',lTelegramTitle:'telegramTitle',lTelegramDesc:'telegramDesc',lChangePwd:'changePwd',lCurrentPwd:'currentPwd',lNewPwdProfile:'newPwdProfile',btnChangePwd:'btnChangePwd',btnLogout:'btnLogout',btnAddApiKey:'btnAddApiKey',btnSaveKey:'btnSaveKey',btnCancelKey:'btnCancelKey'};
+  const pm2={lProfileInfo:'profileInfo',lProfileName:'profileName',lProfileEmailLabel:'profileEmailLabel',lProfilePlan:'profilePlan',lProfileExpiry:'profileExpiry',lProfileJoined:'profileJoined',lApiKeys:'apiKeys',lApiKeyName:'apiKeyName',lTelegramTitle:'telegramTitle',lTelegramDesc:'telegramDesc',lChangePwd:'changePwd',lCurrentPwd:'currentPwd',lNewPwdProfile:'newPwdProfile',btnChangePwd:'btnChangePwd',btnLogout:'btnLogout',btnAddApiKey:'btnAddApiKey',btnSaveKey:'btnSaveKey',btnCancelKey:'btnCancelKey',lNoKrakenAccount:'noKrakenAccount',btnKrakenSignup:'krakenSignupBtn'};
   Object.entries(pm2).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
+  const apiGuideEl=document.getElementById('lApiGuide');if(apiGuideEl)apiGuideEl.innerHTML=t('apiGuide');
   // Refresh
   const rt=document.getElementById('refreshTxt');if(rt)rt.textContent=t('refresh');
   // Legend
@@ -559,23 +622,17 @@ function showToast(msg,type='green',dur=3500){
 
 // ── STATE ────────────────────────────────────────────────────
 function getState(){try{const s=localStorage.getItem('ks_v3');return s?JSON.parse(s):null}catch(e){return null}}
-// ── SESSION CHECK ────────────────────────────────────────────
-function checkSession(){
-  const session=localStorage.getItem('ks_session');
-  if(!session){window.location.href='login.html';return null;}
-  try{return JSON.parse(session);}catch(e){window.location.href='login.html';return null;}
-}
+// ── SESSION ──────────────────────────────────────────────────
+function checkSession(){return currentUser;}
 function doLogout(){
   if(confirm(t('confirmLogout')||'Sign out?')){
-    localStorage.removeItem('ks_session');window.location.href='login.html';
+    localStorage.removeItem('ks_token');window.location.href='login.html';
   }
 }
 
 // ── PROFILE ──────────────────────────────────────────────────
 function renderProfile(){
-  const session=checkSession();if(!session)return;
-  const users=JSON.parse(localStorage.getItem('ks_users')||'[]');
-  const user=users.find(u=>u.id===session.id)||session;
+  const user=currentUser;if(!user)return;
   document.getElementById('profileAvatar').textContent=(user.name||'U').charAt(0).toUpperCase();
   document.getElementById('profileName').textContent=user.name||'User';
   document.getElementById('profileEmail').textContent=user.email||'—';
@@ -584,23 +641,24 @@ function renderProfile(){
   document.getElementById('profileNameVal').textContent=user.name||'—';
   document.getElementById('profileEmailVal').textContent=user.email||'—';
   document.getElementById('profilePlanVal').textContent=plan;
-  document.getElementById('profileExpiryVal').textContent=user.expires===0?'Never':user.expires?new Date(user.expires).toLocaleDateString('en-CA'):'—';
-  document.getElementById('profileJoinedVal').textContent=user.created?new Date(user.created).toLocaleDateString('en-CA'):'—';
+  document.getElementById('profileExpiryVal').textContent=!user.expires_at?'Never':new Date(user.expires_at).toLocaleDateString('en-CA');
+  document.getElementById('profileJoinedVal').textContent=user.created_at?new Date(user.created_at).toLocaleDateString('en-CA'):'—';
   renderApiKeys();
 }
 
-function renderApiKeys(){
-  const keys=JSON.parse(localStorage.getItem('ks_api_keys')||'[]');
+async function renderApiKeys(){
   const el=document.getElementById('apiKeysList');if(!el)return;
+  let keys=[];
+  try{keys=await apiFetch('/api/user/api-keys');}catch(e){el.innerHTML=`<div style="font-size:12px;color:var(--red-text);text-align:center;padding:8px">Could not load API keys.</div>`;return;}
   if(!keys.length){el.innerHTML=`<div style="font-size:12px;color:var(--text-tertiary);text-align:center;padding:8px">No API keys added yet.</div>`;return;}
-  el.innerHTML=keys.map((k,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:6px">
+  el.innerHTML=keys.map(k=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:6px">
     <div>
       <div style="font-size:13px;font-weight:500">${k.name}</div>
-      <div style="font-size:11px;color:var(--text-secondary);font-family:monospace">${k.key.substring(0,8)}...${k.key.slice(-4)}</div>
+      <div style="font-size:11px;color:var(--text-secondary)">Added ${new Date(k.created_at).toLocaleDateString('en-CA')}</div>
     </div>
     <div style="display:flex;gap:6px">
-      ${k.active?'<span style="font-size:11px;color:var(--green-text);background:var(--green-bg);padding:2px 7px;border-radius:6px">Active</span>':'<button onclick="setActiveKey('+i+')" style="font-size:11px;padding:4px 8px;border-radius:6px;background:var(--bg-primary);border:0.5px solid var(--border);color:var(--text-secondary);cursor:pointer">Set active</button>'}
-      <button onclick="deleteApiKey(${i})" style="font-size:11px;padding:4px 8px;border-radius:6px;background:var(--red-bg);border:0.5px solid var(--red);color:var(--red-text);cursor:pointer">Delete</button>
+      ${k.is_active?'<span style="font-size:11px;color:var(--green-text);background:var(--green-bg);padding:2px 7px;border-radius:6px">Active</span>':`<button onclick="setActiveKey('${k.id}')" style="font-size:11px;padding:4px 8px;border-radius:6px;background:var(--bg-primary);border:0.5px solid var(--border);color:var(--text-secondary);cursor:pointer">Set active</button>`}
+      <button onclick="deleteApiKey('${k.id}')" style="font-size:11px;padding:4px 8px;border-radius:6px;background:var(--red-bg);border:0.5px solid var(--red);color:var(--red-text);cursor:pointer">Delete</button>
     </div>
   </div>`).join('');
 }
@@ -612,48 +670,39 @@ function openAddApiKey(){
   document.getElementById('apiPrivateKey').value='';
 }
 
-function saveApiKey(){
+async function saveApiKey(){
   const name=document.getElementById('apiKeyName').value.trim();
-  const key=document.getElementById('apiKeyValue').value.trim();
-  const priv=document.getElementById('apiPrivateKey').value.trim();
-  if(!name||!key||!priv){showToast('Please fill all fields','red');return;}
-  const keys=JSON.parse(localStorage.getItem('ks_api_keys')||'[]');
-  keys.forEach(k=>k.active=false);
-  keys.push({name,key,private:priv,active:true,added:Date.now()});
-  localStorage.setItem('ks_api_keys',JSON.stringify(keys));
-  document.getElementById('addApiKeyForm').style.display='none';
-  renderApiKeys();showToast('✅ API key saved');
+  const apiKey=document.getElementById('apiKeyValue').value.trim();
+  const privateKey=document.getElementById('apiPrivateKey').value.trim();
+  if(!name||!apiKey||!privateKey){showToast('Please fill all fields','red');return;}
+  try{
+    await apiFetch('/api/user/api-keys',{method:'POST',body:JSON.stringify({name,apiKey,privateKey})});
+    document.getElementById('addApiKeyForm').style.display='none';
+    renderApiKeys();showToast('✅ API key saved');
+  }catch(e){showToast(e.message||'Could not save key','red');}
 }
 
-function deleteApiKey(idx){
+async function deleteApiKey(id){
   if(!confirm('Delete this API key?'))return;
-  const keys=JSON.parse(localStorage.getItem('ks_api_keys')||'[]');
-  keys.splice(idx,1);
-  localStorage.setItem('ks_api_keys',JSON.stringify(keys));
-  renderApiKeys();showToast('API key deleted');
+  try{await apiFetch('/api/user/api-keys/'+id,{method:'DELETE'});renderApiKeys();showToast('API key deleted');}
+  catch(e){showToast(e.message||'Could not delete key','red');}
 }
 
-function setActiveKey(idx){
-  const keys=JSON.parse(localStorage.getItem('ks_api_keys')||'[]');
-  keys.forEach((k,i)=>k.active=i===idx);
-  localStorage.setItem('ks_api_keys',JSON.stringify(keys));
-  renderApiKeys();showToast('✅ Active key updated');
+async function setActiveKey(id){
+  try{await apiFetch('/api/user/api-keys/'+id+'/activate',{method:'PUT'});renderApiKeys();showToast('✅ Active key updated');}
+  catch(e){showToast(e.message||'Could not update key','red');}
 }
 
-function changePassword(){
+async function changePassword(){
   const cur=document.getElementById('currentPwd').value;
   const newp=document.getElementById('newPwdProfile').value;
   if(!cur||!newp||newp.length<8){showToast('Password min 8 characters','red');return;}
-  const session=checkSession();if(!session)return;
-  const users=JSON.parse(localStorage.getItem('ks_users')||'[]');
-  const idx=users.findIndex(u=>u.id===session.id);
-  if(idx<0){showToast('User not found','red');return;}
-  if(users[idx].password!==btoa(cur)){showToast('Current password incorrect','red');return;}
-  users[idx].password=btoa(newp);
-  localStorage.setItem('ks_users',JSON.stringify(users));
-  document.getElementById('currentPwd').value='';
-  document.getElementById('newPwdProfile').value='';
-  showToast('✅ Password updated');
+  try{
+    await apiFetch('/api/user/password',{method:'PUT',body:JSON.stringify({currentPassword:cur,newPassword:newp})});
+    document.getElementById('currentPwd').value='';
+    document.getElementById('newPwdProfile').value='';
+    showToast('✅ Password updated');
+  }catch(e){showToast(e.message||'Could not update password','red');}
 }
 
 function initState(){
@@ -718,13 +767,17 @@ function updateAutoNotice(){
 }
 
 // ── TECHNICAL ANALYSIS ───────────────────────────────────────
+function downsampleDaily(pairs){
+  // pairs: [[timestamp,value],...] at ~hourly resolution -> one point per calendar day (last value of the day)
+  const byDay={};
+  pairs.forEach(([ts,v])=>{const day=new Date(ts).toISOString().slice(0,10);byDay[day]=v;});
+  return Object.keys(byDay).sort().map(day=>byDay[day]);
+}
 async function fetchHistorical(coinId){
   if(historicalCache[coinId]&&Date.now()-historicalCache[coinId].ts<300000)return historicalCache[coinId].data;
   try{
-    const res=await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=30&interval=daily`);
-    if(!res.ok)return null;
-    const data=await res.json();
-    const result={prices:data.prices?.map(p=>p[1])||[],volumes:data.total_volumes?.map(v=>v[1])||[]};
+    const data=await apiFetch(`/api/chart/${coinId}?timeframe=1m`);
+    const result={prices:downsampleDaily(data.prices||[]),volumes:downsampleDaily(data.volumes||[])};
     historicalCache[coinId]={data:result,ts:Date.now()};return result;
   }catch(e){return null}
 }
@@ -933,7 +986,7 @@ function checkAutoTrades(){
 
 // ── CHART ────────────────────────────────────────────────────
 async function fetchChart(coinId,days){
-  try{const res=await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`);if(!res.ok)return null;const data=await res.json();return data.prices||null;}catch(e){return null;}
+  try{const data=await apiFetch(`/api/chart/${coinId}?timeframe=${daysToTimeframe(days)}`);return data.prices||null;}catch(e){return null;}
 }
 function renderChart(coinId,days,canvasId){
   const canvas=document.getElementById(canvasId);if(!canvas)return;
@@ -1333,10 +1386,7 @@ function resetPortfolio(){
 async function fetchData(){
   document.getElementById('errorBanner').style.display='none';
   try{
-    const ids=BASE_COINS.map(c=>c.id).join(',');
-    const res=await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&sparkline=false&price_change_percentage=24h`);
-    if(!res.ok)throw new Error();
-    const data=await res.json();
+    const data=await apiFetch('/api/prices');
     updateWatchlist();
     const filtered=data.filter(d=>COINS.some(c=>c.id===d.id));
     renderCoins(filtered);
@@ -1352,8 +1402,50 @@ function startTimer(){
   timerInterval=setInterval(()=>{countdown--;document.getElementById('timerFill').style.width=((countdown/300)*100)+'%';if(countdown<=0){clearInterval(timerInterval);fetchData().then(startTimer);}},1000);
 }
 
+// ── TERMS / RISK DISCLOSURE GATE ─────────────────────────────
+let termsData=null;
+function checkTermsAcceptButton(){
+  const boxes=document.querySelectorAll('.terms-ack-box');
+  const allChecked=[...boxes].every(b=>b.checked);
+  const sig=document.getElementById('termsSignature').value.trim();
+  document.getElementById('termsAcceptBtn').disabled=!(allChecked&&sig.length>0);
+}
+async function maybeShowTermsGate(){
+  if(currentUser&&currentUser.termsAccepted)return;
+  try{termsData=await apiFetch('/api/terms');}catch(e){return;} // fail open on network hiccup rather than lock the user out entirely
+  document.getElementById('termsTitle').textContent=termsData.title||'Risk Disclosure & Terms of Use';
+  const sectionsHtml=(termsData.sections||[]).map(s=>`<div class="terms-section"><h3>${s.heading}</h3><p>${s.body}</p></div>`).join('');
+  const acksHtml=(termsData.acknowledgements||[]).map((a,i)=>`<label class="terms-ack"><input type="checkbox" class="terms-ack-box" onchange="checkTermsAcceptButton()"> <span>${a}</span></label>`).join('');
+  document.getElementById('termsBody').innerHTML=sectionsHtml+'<div style="margin-top:1rem;border-top:0.5px solid var(--border);padding-top:1rem">'+acksHtml+'</div>';
+  document.getElementById('termsSignature').value='';
+  document.getElementById('termsSignature').oninput=checkTermsAcceptButton;
+  document.getElementById('termsAcceptBtn').disabled=true;
+  document.getElementById('termsOverlay').style.display='flex';
+  return new Promise(resolve=>{window._termsResolve=resolve;});
+}
+async function submitTermsAcceptance(){
+  const sig=document.getElementById('termsSignature').value.trim();
+  if(!sig)return;
+  const btn=document.getElementById('termsAcceptBtn');btn.disabled=true;btn.textContent='Signing...';
+  try{
+    await apiFetch('/api/user/accept-terms',{method:'POST',body:JSON.stringify({version:termsData.version,signatureName:sig})});
+    document.getElementById('termsOverlay').style.display='none';
+    currentUser.termsAccepted=true;
+    if(window._termsResolve)window._termsResolve();
+  }catch(e){
+    btn.disabled=false;btn.textContent='I Accept & Sign';
+    showToast(e.message||'Could not save acceptance','red');
+  }
+}
+
 // ── INIT ─────────────────────────────────────────────────────
-initState();loadSettings();applyLanguage();fetchData().then(startTimer);
+(async function init(){
+  await loadUser();
+  if(!currentUser)return; // loadUser() already redirected to login.html
+  await maybeShowTermsGate();
+  initState();loadSettings();applyLanguage();
+  await fetchData();startTimer();
+})();
 </script>
 </body>
 </html>

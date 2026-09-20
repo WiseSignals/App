@@ -177,6 +177,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="plan-chip free"><span>🆓</span><div id="planFreeLabel"></div></div>
     <div class="plan-chip plus"><span>⚡</span><div id="planPlusLabel"></div></div>
     <div class="plan-chip pro"><span>🚀</span><div id="planProLabel"></div></div>
+    <div class="plan-chip platinum" style="border-color:#B08D57;background:rgba(176,141,87,0.1);color:#D4AF6A"><span>💎</span><div id="planPlatinumLabel"></div></div>
   </div>
 
   <div class="footer-note" id="footerNote"></div>
@@ -197,7 +198,7 @@ const T={
     resetDesc:'Enter your new password below.',newPwd:'New password',confirmNewPwd:'Confirm new password',btnReset:'Reset Password',
     inviteNote:'You need an invitation code to create an account.',
     weak:'Weak',fair:'Fair',good:'Good',strong:'Strong',
-    planFree:'Free',planPlus:'Plus',planPro:'Pro',
+    planFree:'Free',planPlus:'Plus',planPro:'Pro',planPlatinum:'Platinum',
     footer:'Secure · Encrypted · Private',
     errEmail:'Please enter a valid email',errPwd:'Password must be at least 8 characters',
     errMatch:'Passwords do not match',errInvite:'Please enter your invitation code',
@@ -220,7 +221,7 @@ const T={
     resetDesc:'رمز عبور جدید خود را وارد کنید.',newPwd:'رمز عبور جدید',confirmNewPwd:'تأیید رمز عبور جدید',btnReset:'تغییر رمز عبور',
     inviteNote:'برای ایجاد حساب به کد دعوت نیاز دارید.',
     weak:'ضعیف',fair:'متوسط',good:'خوب',strong:'قوی',
-    planFree:'رایگان',planPlus:'پلاس',planPro:'حرفه‌ای',
+    planFree:'رایگان',planPlus:'پلاس',planPro:'حرفه‌ای',planPlatinum:'پلاتینیوم',
     footer:'امن · رمزگذاری شده · خصوصی',
     errEmail:'لطفاً یک ایمیل معتبر وارد کنید',errPwd:'رمز عبور باید حداقل ۸ کاراکتر باشد',
     errMatch:'رمزهای عبور مطابقت ندارند',errInvite:'لطفاً کد دعوت را وارد کنید',
@@ -243,7 +244,7 @@ const T={
     resetDesc:'Ingresa tu nueva contraseña.',newPwd:'Nueva contraseña',confirmNewPwd:'Confirmar nueva contraseña',btnReset:'Restablecer contraseña',
     inviteNote:'Necesitas un código de invitación para crear una cuenta.',
     weak:'Débil',fair:'Regular',good:'Buena',strong:'Fuerte',
-    planFree:'Gratis',planPlus:'Plus',planPro:'Pro',
+    planFree:'Gratis',planPlus:'Plus',planPro:'Pro',planPlatinum:'Platino',
     footer:'Seguro · Cifrado · Privado',
     errEmail:'Ingresa un correo válido',errPwd:'La contraseña debe tener al menos 8 caracteres',
     errMatch:'Las contraseñas no coinciden',errInvite:'Ingresa tu código de invitación',
@@ -255,6 +256,7 @@ const T={
   }
 };
 
+const API_BASE='https://wisesignals-backend-production.up.railway.app';
 let lang='en';
 
 function t(k){return T[lang][k]||T.en[k]||k;}
@@ -277,7 +279,7 @@ function applyLang(){
     lInviteNote:'inviteNote',lForgotDesc:'forgotDesc',lEmailForgot:'emailForgot',
     btnForgot:'btnForgot',lBackLogin:'backLogin',lResetDesc:'resetDesc',
     lNewPwd:'newPwd',lConfirmNewPwd:'confirmNewPwd',btnReset:'btnReset',
-    planFreeLabel:'planFree',planPlusLabel:'planPlus',planProLabel:'planPro',
+    planFreeLabel:'planFree',planPlusLabel:'planPlus',planProLabel:'planPro',planPlatinumLabel:'planPlatinum',
     footerNote:'footer',
   };
   Object.entries(ids).forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.textContent=t(key);});
@@ -322,28 +324,31 @@ function setLoading(btnId,loadingKey,isLoading){
   else{btn.textContent=t(btnId==='btnLogin'?'btnLogin':btnId==='btnRegister'?'btnRegister':btnId==='btnForgot'?'btnForgot':'btnReset');btn.disabled=false;}
 }
 
-function doLogin(){
+async function apiCall(path,body){
+  const res=await fetch(API_BASE+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(data.error||'Request failed');
+  return data;
+}
+
+async function doLogin(){
   const email=document.getElementById('loginEmail').value.trim();
   const pwd=document.getElementById('loginPassword').value;
   if(!email||!email.includes('@')){showAlert(t('errEmail'));return;}
   if(!pwd||pwd.length<8){showAlert(t('errPwd'));return;}
   setLoading('btnLogin','loggingIn',true);
-  // Phase 2: will call backend API
-  // For now simulate with localStorage demo account
-  setTimeout(()=>{
-    const users=JSON.parse(localStorage.getItem('ks_users')||'[]');
-    const user=users.find(u=>u.email===email&&u.password===btoa(pwd));
-    if(user){
-      localStorage.setItem('ks_session',JSON.stringify({id:user.id,name:user.name,email:user.email,plan:user.plan,lang}));
-      window.location.href='index.html';
-    }else{
-      showAlert('Invalid email or password');
-      setLoading('btnLogin','btnLogin',false);
-    }
-  },800);
+  try{
+    const data=await apiCall('/api/auth/login',{email,password:pwd});
+    localStorage.setItem('ks_token',data.token);
+    localStorage.setItem('ks_lang',lang);
+    window.location.href='index.html';
+  }catch(err){
+    showAlert(err.message||'Invalid email or password');
+    setLoading('btnLogin','btnLogin',false);
+  }
 }
 
-function doRegister(){
+async function doRegister(){
   const invite=document.getElementById('regInvite').value.trim();
   const name=document.getElementById('regName').value.trim();
   const email=document.getElementById('regEmail').value.trim();
@@ -355,51 +360,66 @@ function doRegister(){
   if(!pwd||pwd.length<8){showAlert(t('errPwd'));return;}
   if(pwd!==confirm){showAlert(t('errMatch'));return;}
   setLoading('btnRegister','registering',true);
-  // Phase 2: will validate invite code via backend API
-  setTimeout(()=>{
-    const invites=JSON.parse(localStorage.getItem('ks_invites')||'["DEMO-2024-FREE","PLUS-2024-TEST","PRO-2024-TEST"]');
-    if(!invites.includes(invite.toUpperCase())){
-      showAlert('Invalid or expired invitation code.');
-      setLoading('btnRegister','btnRegister',false);return;
-    }
-    const plan=invite.startsWith('PRO')?'pro':invite.startsWith('PLUS')?'plus':'free';
-    const users=JSON.parse(localStorage.getItem('ks_users')||'[]');
-    if(users.find(u=>u.email===email)){showAlert('Email already registered.');setLoading('btnRegister','btnRegister',false);return;}
-    const user={id:Date.now().toString(),name,email,password:btoa(pwd),plan,created:Date.now(),expires:Date.now()+30*24*3600*1000};
-    users.push(user);localStorage.setItem('ks_users',JSON.stringify(users));
+  try{
+    const data=await apiCall('/api/auth/register',{inviteCode:invite,name,email,password:pwd});
+    localStorage.setItem('ks_token',data.token);
+    localStorage.setItem('ks_lang',lang);
     showAlert(t('successRegister'),'success');
-    setTimeout(()=>showPanel('login'),2000);
+    setTimeout(()=>{window.location.href='index.html';},1200);
+  }catch(err){
+    showAlert(err.message||'Registration failed');
     setLoading('btnRegister','btnRegister',false);
-  },800);
+  }
 }
 
-function doForgot(){
+async function doForgot(){
   const email=document.getElementById('forgotEmail').value.trim();
   if(!email||!email.includes('@')){showAlert(t('errEmail'));return;}
   setLoading('btnForgot','sending',true);
-  setTimeout(()=>{
+  try{
+    await apiCall('/api/auth/forgot-password',{email});
     showAlert(t('successForgot'),'success');
+  }catch(err){
+    showAlert(err.message||'Request failed');
+  }finally{
     setLoading('btnForgot','btnForgot',false);
-  },1000);
+  }
 }
 
-function doReset(){
+let resetToken=null;
+
+async function doReset(){
   const pwd=document.getElementById('resetPassword').value;
   const confirm=document.getElementById('resetConfirm').value;
   if(!pwd||pwd.length<8){showAlert(t('errPwd'));return;}
   if(pwd!==confirm){showAlert(t('errMatch'));return;}
+  if(!resetToken){showAlert('Missing or invalid reset link.');return;}
   setLoading('btnReset','sending',true);
-  setTimeout(()=>{
+  try{
+    await apiCall('/api/auth/reset-password',{token:resetToken,password:pwd});
     showAlert(t('successReset'),'success');
-    setTimeout(()=>showPanel('login'),2000);
+    setTimeout(()=>{
+      window.location.href='login.html';
+    },2000);
+  }catch(err){
+    showAlert(err.message||'Reset failed');
     setLoading('btnReset','btnReset',false);
-  },1000);
+  }
 }
 
-// Check for invite code in URL
+// Already signed in? Skip straight to the app.
+if(localStorage.getItem('ks_token')){
+  window.location.href='index.html';
+}
+
+// Check for invite code or password-reset token in URL
 const urlParams=new URLSearchParams(window.location.search);
 const inviteParam=urlParams.get('invite');
-if(inviteParam){
+const resetParam=urlParams.get('reset');
+if(resetParam){
+  resetToken=resetParam;
+  showPanel('reset');
+}else if(inviteParam){
   document.getElementById('regInvite').value=inviteParam;
   showPanel('register');
 }
