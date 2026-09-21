@@ -207,7 +207,7 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
       <div class="setting-row"><span class="setting-label" id="lAutoEnabled"></span><input type="checkbox" id="autoEnabled" onchange="saveSetting('autoEnabled',this.checked)" style="width:18px;height:18px;cursor:pointer"></div>
       <div class="setting-row"><span class="setting-label" id="lRiskLevel"></span>
         <div style="display:flex;align-items:center;gap:8px">
-          <input type="range" id="autoRisk" min="1" max="50" value="25" oninput="updateRiskDisplay(this.value)" onchange="saveSetting('autoRisk',this.value)" style="width:100px">
+          <input type="range" id="autoRisk" min="1" max="50" value="25" oninput="updateRiskDisplay(this.value)" onchange="onAutoRiskChange(this)" style="width:100px">
           <span id="riskDisplay" style="font-size:14px;font-weight:600;color:var(--green);min-width:36px">25%</span>
         </div>
       </div>
@@ -457,6 +457,7 @@ en:{
   rotateFrom:'Rotate from',howMuchRotate:'How much to rotate?',netAmount:'Net amount',totalFees:'Total fees',
   cashBalance:'Cash balance',
   confirmBuy:'Confirm BUY?',confirmSell:'Confirm SELL?',confirmRotate:'Confirm ROTATE?',confirm:'Confirm',cancel:'Cancel',
+  riskWarning:'Setting auto-trade risk above 75% (to {r}%) means a much larger share of your portfolio can be traded automatically on a single signal. This carries a high risk of significant losses, and that risk is entirely on you. Continue with {r}%?',
   sell25:'Sell 25%',sell50:'Sell 50%',sell75:'Sell 75%',sell100:'Sell 100%',
   pctToSell:'% to sell',
   signalBuy:'BUY signal',signalSell:'SELL signal',
@@ -523,6 +524,7 @@ fa:{
   rotateFrom:'جابجایی از',howMuchRotate:'چه مقدار جابجا شود؟',netAmount:'مبلغ خالص',totalFees:'کارمزد کل',
   cashBalance:'موجودی نقد',
   confirmBuy:'خرید را تأیید می‌کنید؟',confirmSell:'فروش را تأیید می‌کنید؟',confirmRotate:'جابجایی را تأیید می‌کنید؟',confirm:'تأیید',cancel:'لغو',
+  riskWarning:'تنظیم ریسک اتوتریدر بالای ۷۵٪ (به {r}٪) یعنی سهم بسیار بزرگ‌تری از پورتفولیوی شما می‌تواند با یک سیگنال به‌طور خودکار معامله شود. این ریسک قابل توجهی از ضرر جدی دارد و کاملاً بر عهده شماست. با {r}٪ ادامه می‌دهید؟',
   sell25:'فروش ۲۵٪',sell50:'فروش ۵۰٪',sell75:'فروش ۷۵٪',sell100:'فروش کل',
   pctToSell:'درصد فروش',
   signalBuy:'سیگنال خرید',signalSell:'سیگنال فروش',
@@ -589,6 +591,7 @@ es:{
   rotateFrom:'Rotar desde',howMuchRotate:'¿Cuánto rotar?',netAmount:'Monto neto',totalFees:'Comisiones totales',
   cashBalance:'Efectivo disponible',
   confirmBuy:'¿Confirmar COMPRA?',confirmSell:'¿Confirmar VENTA?',confirmRotate:'¿Confirmar ROTACIÓN?',confirm:'Confirmar',cancel:'Cancelar',
+  riskWarning:'Establecer el riesgo de auto-trade por encima del 75% (a {r}%) significa que una parte mucho mayor de tu portafolio puede operarse automáticamente con una sola señal. Esto conlleva un alto riesgo de pérdidas significativas, y ese riesgo es enteramente tuyo. ¿Continuar con {r}%?',
   sell25:'Vender 25%',sell50:'Vender 50%',sell75:'Vender 75%',sell100:'Vender todo',
   pctToSell:'% a vender',
   signalBuy:'Señal de compra',signalSell:'Señal de venta',
@@ -913,10 +916,26 @@ async function saveSetting(k,v){
   }
   updateAutoNotice();
 }
+function riskColor(v){return v>75?'var(--red)':v>=60?'var(--amber)':'var(--green)';}
 function updateRiskDisplay(v){
-  const d=document.getElementById('riskDisplay');if(d)d.textContent=v+'%';
+  v=parseInt(v);
+  const color=riskColor(v);
+  const d=document.getElementById('riskDisplay');if(d){d.textContent=v+'%';d.style.color=color;}
+  const slider=document.getElementById('autoRisk');if(slider)slider.style.accentColor=color;
   const adesc=document.getElementById('autoDesc');
   if(adesc)adesc.innerHTML=t('autoDesc').replace('{r}',v).replace('{d}',appSettings.auto_delay_min||5);
+}
+// Risk above 75% moves a much larger share of the portfolio per signal —
+// require an explicit, informed confirmation before it can be set at all.
+function onAutoRiskChange(el){
+  const v=parseInt(el.value);
+  if(v>75&&!confirm(t('riskWarning').replaceAll('{r}',v))){
+    const prev=appSettings.auto_risk_pct||25;
+    el.value=prev;
+    updateRiskDisplay(prev);
+    return;
+  }
+  saveSetting('autoRisk',v);
 }
 
 // ── WATCHLIST ────────────────────────────────────────────────
