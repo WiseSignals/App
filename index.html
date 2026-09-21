@@ -292,7 +292,7 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
       <div class="settings-title" id="lLangTitle">🌐 Language</div>
       <div class="setting-row">
         <span class="setting-label">Language / زبان / Idioma</span>
-        <select id="sLang" onchange="saveSetting('lang',this.value);applyLanguage()">
+        <select id="sLang" onchange="saveSetting('lang',this.value)">
           <option value="en">🇬🇧 English</option>
           <option value="fa">🇮🇷 فارسی</option>
           <option value="es">🇪🇸 Español</option>
@@ -903,12 +903,19 @@ async function saveSetting(k,v){
     }else if(k==='autoDelay'){
       appSettings.auto_delay_min=parseInt(v);
       await apiFetch('/api/user/settings',{method:'PUT',body:JSON.stringify({auto_delay_min:parseInt(v)})});
+      renderAutoTab();
     }else{
       appSettings[k]=v;
+      // Apply immediately (optimistic) so switching language feels instant —
+      // this used to ALSO be triggered directly from the <select>'s onchange,
+      // so it fired twice per change and, if the save below then failed, left
+      // the page visually showing the new language while the reverted
+      // appSettings silently disagreed until a refresh reloaded the real
+      // (unsaved) value from the server.
+      if(k==='lang'){const sl=document.getElementById('sLang');if(sl)sl.value=v;applyLanguage();}
       const settingsBlob={};BLOB_SETTING_KEYS.forEach(key=>settingsBlob[key]=appSettings[key]);
       await apiFetch('/api/user/settings',{method:'PUT',body:JSON.stringify({settings:settingsBlob})});
       if(k==='tradeSize'){const r=document.getElementById('customDefaultRow');if(r)r.style.display=v==='custom'?'flex':'none'}
-      if(k==='lang'){const sl=document.getElementById('sLang');if(sl)sl.value=v;applyLanguage();}
     }
   }catch(e){
     // Revert on failure (e.g. plan doesn't allow auto-trade) so the UI matches the server's actual state.
@@ -918,6 +925,7 @@ async function saveSetting(k,v){
     else if(k==='currency'){currentUser.currency=prevValue;const sc=document.getElementById('sCurrency');if(sc)sc.value=prevValue;}
     else appSettings[k]=prevValue;
     loadSettings();
+    if(k==='lang'){const sl=document.getElementById('sLang');if(sl)sl.value=prevValue;applyLanguage();}
     showToast(e.message||'Could not save setting','red');
   }
   updateAutoNotice();
