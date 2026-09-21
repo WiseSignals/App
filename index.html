@@ -168,18 +168,25 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
   </div>
 
   <div id="tab-portfolio" class="panel">
-    <div class="metric-grid">
-      <div class="metric-card"><div class="metric-label" id="lTotalValue"></div><div class="metric-value" id="pTotal">$100.00</div><div class="metric-sub" id="lPaperPortfolio"></div></div>
-      <div class="metric-card"><div class="metric-label" id="lTotalPnl"></div><div class="metric-value" id="pPnl">$0.00</div><div class="metric-sub" id="pPnlPct">0.00%</div></div>
-      <div class="metric-card"><div class="metric-label" id="lCashAvail"></div><div class="metric-value" id="pCash">$100.00</div><div class="metric-sub" id="pCashPct">100%</div></div>
-      <div class="metric-card"><div class="metric-label" id="lWinRate"></div><div class="metric-value" id="pWin">—</div><div class="metric-sub" id="pWinSub"></div></div>
+    <div style="display:flex;gap:6px;padding:0.75rem 1rem 0.25rem">
+      <button id="pfModePaper" onclick="setTradingMode('paper')" style="flex:1;padding:8px;font-size:13px;font-weight:500;border-radius:var(--radius-md);border:0.5px solid var(--border-strong);cursor:pointer">Paper</button>
+      <button id="pfModeReal" onclick="setTradingMode('real')" style="flex:1;padding:8px;font-size:13px;font-weight:500;border-radius:var(--radius-md);border:0.5px solid var(--border-strong);cursor:pointer">Real</button>
     </div>
-    <div class="metric-grid" style="padding-top:0">
-      <div class="metric-card"><div class="metric-label" id="lTradesTaken"></div><div class="metric-value" id="pCount">0</div><div class="metric-sub" id="pSkip"></div></div>
-      <div class="metric-card"><div class="metric-label" id="lInPositions"></div><div class="metric-value" id="pInvested">$0.00</div><div class="metric-sub" id="pInvestedPct"></div></div>
+    <div id="paperPortfolioView">
+      <div class="metric-grid">
+        <div class="metric-card"><div class="metric-label" id="lTotalValue"></div><div class="metric-value" id="pTotal">$100.00</div><div class="metric-sub" id="lPaperPortfolio"></div></div>
+        <div class="metric-card"><div class="metric-label" id="lTotalPnl"></div><div class="metric-value" id="pPnl">$0.00</div><div class="metric-sub" id="pPnlPct">0.00%</div></div>
+        <div class="metric-card"><div class="metric-label" id="lCashAvail"></div><div class="metric-value" id="pCash">$100.00</div><div class="metric-sub" id="pCashPct">100%</div></div>
+        <div class="metric-card"><div class="metric-label" id="lWinRate"></div><div class="metric-value" id="pWin">—</div><div class="metric-sub" id="pWinSub"></div></div>
+      </div>
+      <div class="metric-grid" style="padding-top:0">
+        <div class="metric-card"><div class="metric-label" id="lTradesTaken"></div><div class="metric-value" id="pCount">0</div><div class="metric-sub" id="pSkip"></div></div>
+        <div class="metric-card"><div class="metric-label" id="lInPositions"></div><div class="metric-value" id="pInvested">$0.00</div><div class="metric-sub" id="pInvestedPct"></div></div>
+      </div>
+      <div class="section-label" id="lOpenPositions"></div>
+      <div id="openPositions"><div class="empty-state" id="lNoPositions"></div></div>
     </div>
-    <div class="section-label" id="lOpenPositions"></div>
-    <div id="openPositions"><div class="empty-state" id="lNoPositions"></div></div>
+    <div id="realPortfolioView" style="display:none"></div>
   </div>
 
   <div id="tab-history" class="panel">
@@ -289,6 +296,19 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
       </div>
     </div>
     <div class="settings-section">
+      <div class="settings-title" id="lCurrencyTitle">💱 Currency</div>
+      <div class="setting-row">
+        <span class="setting-label" id="lCurrencyLabel">Display currency</span>
+        <select id="sCurrency" onchange="saveSetting('currency',this.value)">
+          <option value="usd">USD $</option>
+          <option value="cad">CAD $</option>
+          <option value="eur">EUR €</option>
+          <option value="gbp">GBP £</option>
+          <option value="aud">AUD $</option>
+        </select>
+      </div>
+    </div>
+    <div class="settings-section">
       <div class="settings-title" id="lSigSens"></div>
       <div class="setting-row"><span class="setting-label" id="lMinStrength"></span><select id="sSens" onchange="saveSetting('sensitivity',this.value)"><option value="all" id="oAll"></option><option value="moderate" id="oMod"></option><option value="strong" id="oStrong"></option></select></div>
       <div class="setting-row"><span class="setting-label" id="lMinMove"></span><select id="sChange" onchange="saveSetting('minChange',this.value)"><option value="0" id="oAny"></option><option value="1">1%+</option><option value="2">2%+</option><option value="3">3%+</option><option value="5">5%+</option></select></div>
@@ -297,7 +317,7 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
       <div class="settings-title" id="lDefAmount"></div>
       <div class="setting-row"><span class="setting-label" id="lQuickPreset"></span>
         <select id="sSize" onchange="saveSetting('tradeSize',this.value)">
-          <option value="10">$10</option><option value="25" selected>$25</option><option value="50">$50</option><option value="75">$75</option><option value="custom" id="oCustom"></option>
+          <option value="10" id="oSize10">$10</option><option value="25" id="oSize25" selected>$25</option><option value="50" id="oSize50">$50</option><option value="75" id="oSize75">$75</option><option value="custom" id="oCustom"></option>
         </select>
       </div>
       <div class="setting-row" id="customDefaultRow" style="display:none">
@@ -362,6 +382,22 @@ const API_BASE='https://wisesignals-backend-production.up.railway.app';
 let currentUser=null;
 let appSettings={sensitivity:'moderate',minChange:'1',tradeSize:'25',customDefault:'',lang:'en'};
 let portfolioBalance=100,portfolioPositions={},tradesHistory=[],autoQueue=[];
+// Portfolio/trade amounts are already converted to the user's currency by the
+// backend (currencyService, applied at the API boundary), but live coin
+// prices from /api/prices are always raw USD (straight from CoinGecko) — fxRate
+// converts those client-side so price-derived figures (position value, etc.)
+// stay consistent with the already-converted amounts instead of silently
+// mixing units once a non-USD currency is selected.
+let fxRate=1;
+const CURRENCY_SYMBOLS={usd:'$',cad:'CA$',eur:'€',gbp:'£',aud:'A$'};
+function curSym(){return CURRENCY_SYMBOLS[currentUser?.currency||'usd']||'$';}
+function cv(usdValue){return usdValue*fxRate;}
+async function refreshFxRate(){
+  try{
+    const r=await apiFetch('/api/fx-rates');
+    fxRate=(r.rates&&r.rates[currentUser?.currency])||1;
+  }catch(e){fxRate=1;}
+}
 function getToken(){return localStorage.getItem('ks_token');}
 async function apiFetch(path,options={}){
   const token=getToken();
@@ -732,10 +768,13 @@ async function disconnectTelegram(){
   }catch(e){showToast(e.message||'Could not disconnect','red');}
 }
 
+let hasActiveKrakenKey=false;
 async function renderApiKeys(){
   const el=document.getElementById('apiKeysList');if(!el)return;
   let keys=[];
   try{keys=await apiFetch('/api/user/api-keys');}catch(e){el.innerHTML=`<div style="font-size:12px;color:var(--red-text);text-align:center;padding:8px">Could not load API keys.</div>`;return;}
+  hasActiveKrakenKey=keys.some(k=>k.is_active);
+  renderPortfolioModeToggle();
   if(!keys.length){el.innerHTML=`<div style="font-size:12px;color:var(--text-tertiary);text-align:center;padding:8px">No API keys added yet.</div>`;return;}
   el.innerHTML=keys.map(k=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:6px">
     <div>
@@ -809,9 +848,17 @@ function loadAppSettings(){
 
 async function saveSetting(k,v){
   if(k==='autoEnabled')v=(v===true||v==='true');
-  const prevValue=k==='autoEnabled'?appSettings.auto_trade_enabled:k==='autoRisk'?appSettings.auto_risk_pct:k==='autoDelay'?appSettings.auto_delay_min:appSettings[k];
+  const prevValue=k==='autoEnabled'?appSettings.auto_trade_enabled:k==='autoRisk'?appSettings.auto_risk_pct:k==='autoDelay'?appSettings.auto_delay_min:k==='currency'?currentUser.currency:appSettings[k];
   try{
-    if(k==='autoEnabled'){
+    if(k==='currency'){
+      currentUser.currency=v;
+      await apiFetch('/api/user/settings',{method:'PUT',body:JSON.stringify({currency:v})});
+      await refreshFxRate();
+      await Promise.all([refreshPortfolio(),refreshTrades()]);
+      await fetchData();
+      renderPortfolio();renderHistory();loadSettings();
+      if(tradingMode==='real')await refreshRealPortfolio();
+    }else if(k==='autoEnabled'){
       appSettings.auto_trade_enabled=v;
       await apiFetch('/api/user/settings',{method:'PUT',body:JSON.stringify({auto_trade_enabled:v})});
       renderAutoTab();
@@ -834,6 +881,7 @@ async function saveSetting(k,v){
     if(k==='autoEnabled')appSettings.auto_trade_enabled=prevValue;
     else if(k==='autoRisk')appSettings.auto_risk_pct=prevValue;
     else if(k==='autoDelay')appSettings.auto_delay_min=prevValue;
+    else if(k==='currency'){currentUser.currency=prevValue;const sc=document.getElementById('sCurrency');if(sc)sc.value=prevValue;}
     else appSettings[k]=prevValue;
     loadSettings();
     showToast(e.message||'Could not save setting','red');
@@ -909,7 +957,9 @@ function calcVolRatio(vols){if(vols.length<8)return null;const r=vols[vols.lengt
 async function analyzeReal(coinId,price,change,high,low){
   const hist=await fetchHistorical(coinId);
   if(!hist||hist.prices.length<15)return analyzeFallback(price,change,high,low);
-  const prices=[...hist.prices,price];
+  // hist.prices come raw in USD from /api/chart; convert alongside the
+  // current price so the MA7/MA25 series stays on a consistent scale.
+  const prices=[...hist.prices.map(cv),cv(price)];
   const rsi=calcRSI(prices,14),ma7=calcMA(prices,7),ma25=calcMA(prices,25),volRatio=calcVolRatio(hist.volumes);
   const rv=rsi!==null?rsi:50;
   const am7=ma7!==null?price>ma7:null,am25=ma25!==null?price>ma25:null;
@@ -924,7 +974,7 @@ async function analyzeReal(coinId,price,change,high,low){
   if(am7===true&&am25===true)ss+=1;
   if(volRatio!==null&&volRatio>1.5){bs+=bs>0?1:0;ss+=ss>0?1:0;}
   const rStr=rsi!==null?rsi.toFixed(0):'~'+Math.round(rv);
-  const m7s=ma7!==null?'$'+ma7.toFixed(2):'—',m25s=ma25!==null?'$'+ma25.toFixed(2):'—';
+  const m7s=ma7!==null?curSym()+ma7.toFixed(2):'—',m25s=ma25!==null?curSym()+ma25.toFixed(2):'—';
   let signal,strength,reason;
   if(bs>=4){signal='BUY';strength='Strong';reason=`RSI ${rStr} (${t('oversold')}). ${t('bounce')}. MA7:${m7s} MA25:${m25s} · ${trend}${volStr?' · '+volStr:''}.`}
   else if(bs>=2){signal='BUY';strength='Moderate';reason=`RSI ${rStr} (${t('weakness')}). ${t('accumulation')}. MA7:${m7s} · ${trend}${volStr?' · '+volStr:''}.`}
@@ -961,8 +1011,8 @@ function getDefaultAmount(bal){
 }
 function getSmartSuggestions(bal,strength){
   const s10=Math.min(10,bal*0.1),s25=Math.min(25,bal*0.25),srec=strength==='Strong'?Math.min(40,bal*0.4):s25,s50=Math.min(50,bal*0.5);
-  return[{label:`$${s10.toFixed(0)}`,sub:t('safe'),val:s10},{label:`$${s25.toFixed(0)}`,sub:t('moderate'),val:s25,rec:strength!=='Strong'},
-    {label:`$${srec.toFixed(0)}`,sub:t('suggested'),val:srec,rec:true},{label:`$${s50.toFixed(0)}`,sub:t('aggressive'),val:s50}
+  return[{label:`${curSym()}${s10.toFixed(0)}`,sub:t('safe'),val:s10},{label:`${curSym()}${s25.toFixed(0)}`,sub:t('moderate'),val:s25,rec:strength!=='Strong'},
+    {label:`${curSym()}${srec.toFixed(0)}`,sub:t('suggested'),val:srec,rec:true},{label:`${curSym()}${s50.toFixed(0)}`,sub:t('aggressive'),val:s50}
   ].filter((v,i,a)=>a.findIndex(x=>x.val.toFixed(0)===v.val.toFixed(0))===i);
 }
 function selectAmount(coinId,amount){
@@ -978,8 +1028,8 @@ function updateAcceptBtn(coinId){
   const amount=selectedAmounts[coinId]||getDefaultAmount(portfolioBalance);
   const fee=amount*FEE,btn=document.getElementById('acceptBtn-'+coinId),warn=document.getElementById('amtWarn-'+coinId),info=document.getElementById('amtInfo-'+coinId);
   if(!btn)return;
-  if(amount>portfolioBalance){btn.disabled=true;btn.style.opacity='0.5';if(warn)warn.textContent=`${t('notEnoughBalance')}. Max: $${portfolioBalance.toFixed(2)}`;if(info)info.textContent=''}
-  else{btn.disabled=false;btn.style.opacity='1';btn.textContent=`${t('acceptBuy')} · $${amount.toFixed(2)}`;if(warn)warn.textContent='';if(info)info.textContent=`${t('totalFees')}: $${fee.toFixed(3)}`}
+  if(amount>portfolioBalance){btn.disabled=true;btn.style.opacity='0.5';if(warn)warn.textContent=`${t('notEnoughBalance')}. Max: ${curSym()}${portfolioBalance.toFixed(2)}`;if(info)info.textContent=''}
+  else{btn.disabled=false;btn.style.opacity='1';btn.textContent=`${t('acceptBuy')} · ${curSym()}${amount.toFixed(2)}`;if(warn)warn.textContent='';if(info)info.textContent=`${t('totalFees')}: ${curSym()}${fee.toFixed(3)}`}
 }
 
 // ── TRADE FUNCTIONS ───────────────────────────────────────────
@@ -1001,34 +1051,120 @@ async function refreshAutoQueue(){
   try{autoQueue=await apiFetch('/api/user/auto-queue');}catch(e){console.error('auto-queue fetch failed',e);}
 }
 
+// ── REAL (KRAKEN) TRADING ─────────────────────────────────────
+// tradingMode is a per-device UI preference (which portfolio view you're
+// looking at) — same category of thing as the JWT token already kept in
+// localStorage, not shared account state.
+let tradingMode='paper';
+try{tradingMode=localStorage.getItem('ks_mode')||'paper';}catch(e){}
+let realPortfolio={cashBalance:0,positions:[],totalValue:0},realOrders=[];
+
+function canUseRealTrading(){
+  return !!(currentUser&&PLAN_HIERARCHY[currentUser.plan||'free']>=PLAN_HIERARCHY.plus&&hasActiveKrakenKey);
+}
+function renderPortfolioModeToggle(){
+  const pb=document.getElementById('pfModePaper'),rb=document.getElementById('pfModeReal');
+  if(!pb||!rb)return;
+  const canReal=canUseRealTrading();
+  pb.style.background=tradingMode==='paper'?'var(--green)':'var(--bg-secondary)';
+  pb.style.color=tradingMode==='paper'?'#fff':'var(--text-secondary)';
+  rb.style.background=tradingMode==='real'?'var(--green)':'var(--bg-secondary)';
+  rb.style.color=tradingMode==='real'?'#fff':'var(--text-secondary)';
+  rb.style.opacity=canReal?'1':'0.6';
+  rb.title=canReal?'':(hasActiveKrakenKey?'Requires Plus plan or higher':'Add and activate a Kraken API key first (Profile tab)');
+  const ppv=document.getElementById('paperPortfolioView'),rpv=document.getElementById('realPortfolioView');
+  if(ppv)ppv.style.display=tradingMode==='paper'?'block':'none';
+  if(rpv)rpv.style.display=tradingMode==='real'?'block':'none';
+}
+async function setTradingMode(mode){
+  if(mode==='real'&&!canUseRealTrading()){
+    showToast(hasActiveKrakenKey?'Requires Plus plan or higher':'Add and activate a Kraken API key first (Profile tab)','red');
+    return;
+  }
+  tradingMode=mode;
+  try{localStorage.setItem('ks_mode',mode);}catch(e){}
+  renderPortfolioModeToggle();
+  if(mode==='real'){await refreshRealPortfolio();await refreshRealOrders();renderRealPortfolioView();}
+}
+async function refreshRealPortfolio(){
+  try{realPortfolio=await apiFetch('/api/real/summary');}catch(e){realPortfolio={cashBalance:0,positions:[],totalValue:0,error:e.message||'Could not load Kraken balance'};}
+}
+async function refreshRealOrders(){
+  try{realOrders=await apiFetch('/api/real/orders');}catch(e){realOrders=[];}
+}
+function renderRealPortfolioView(){
+  const el=document.getElementById('realPortfolioView');if(!el)return;
+  if(realPortfolio.error){el.innerHTML=`<div style="padding:16px;text-align:center;color:var(--red-text);font-size:13px">${realPortfolio.error}</div>`;return;}
+  const positionsHtml=(realPortfolio.positions||[]).length?realPortfolio.positions.map(p=>`<div class="open-position">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:15px;font-weight:600">${curSym()}${p.value.toFixed(2)}</span>
+        <span style="font-size:11px;color:var(--text-tertiary)">${p.symbol}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:2px">${p.units.toFixed(6)} ${p.symbol}</div>
+    </div>`).join(''):`<div class="empty-state">No open Kraken positions.</div>`;
+  const ordersHtml=(realOrders||[]).slice(0,20).map(o=>{
+    const date=new Date(o.created_at).toLocaleDateString('en-CA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const statusColor=o.status==='closed'?'var(--green-text)':o.status==='open'?'var(--blue-text)':'var(--text-tertiary)';
+    return`<div class="trade-item"><div class="trade-header"><span class="trade-coin">${o.coin_symbol} <span style="font-size:11px;color:var(--text-tertiary)">${o.side.toUpperCase()}</span></span><span style="font-size:12px;font-weight:600;color:${statusColor}">${o.status}</span></div><div class="trade-meta">${curSym()}${(o.limit_price||0).toFixed(2)} · ${(o.filled_volume||0).toFixed(6)}/${(o.volume||0).toFixed(6)} filled · ${date}</div></div>`;
+  }).join('')||`<div class="empty-state">No Kraken orders yet.</div>`;
+  el.innerHTML=`
+    <div class="metric-grid">
+      <div class="metric-card"><div class="metric-label">Total value</div><div class="metric-value">${curSym()}${(realPortfolio.totalValue||0).toFixed(2)}</div><div class="metric-sub">Live from Kraken</div></div>
+      <div class="metric-card"><div class="metric-label">Cash</div><div class="metric-value">${curSym()}${(realPortfolio.cashBalance||0).toFixed(2)}</div></div>
+    </div>
+    <div class="section-label">Positions</div>
+    <div>${positionsHtml}</div>
+    <div class="section-label">Recent Kraken orders</div>
+    <div>${ordersHtml}</div>`;
+}
+async function realBuy(coinId){
+  const coin=COINS.find(c=>c.id===coinId);
+  const amount=selectedAmounts[coinId]||getDefaultAmount(portfolioBalance);
+  if(!confirm(`Place a real Kraken limit buy order?\n${coin?.name} · ${curSym()}${amount.toFixed(2)}\nThis places a limit order near the current price — it may take time to fill. Check Portfolio → Real for status.`))return;
+  try{
+    await apiFetch('/api/real/buy',{method:'POST',body:JSON.stringify({coinId,coinSymbol:coin?.symbol||coinId.toUpperCase(),amount})});
+    showToast(`Real limit buy order placed for ${coin?.symbol||coinId} — check Portfolio → Real for status`,'green');
+    await refreshRealOrders();if(tradingMode==='real')renderRealPortfolioView();
+  }catch(e){showToast(e.message||'Order failed','red');}
+}
+async function realSell(coinId){
+  const coin=COINS.find(c=>c.id===coinId);
+  if(!confirm(`Place a real Kraken limit sell order?\nSell 100% of your ${coin?.symbol||coinId} balance on Kraken.\nThis places a limit order near the current price — it may take time to fill. Check Portfolio → Real for status.`))return;
+  try{
+    await apiFetch('/api/real/sell',{method:'POST',body:JSON.stringify({coinId,coinSymbol:coin?.symbol||coinId.toUpperCase(),pct:100})});
+    showToast(`Real limit sell order placed for ${coin?.symbol||coinId} — check Portfolio → Real for status`,'green');
+    await refreshRealOrders();if(tradingMode==='real')renderRealPortfolioView();
+  }catch(e){showToast(e.message||'Order failed','red');}
+}
+
 async function acceptTrade(coinId){
   const price=currentPrices[coinId];if(!price)return;
   const amount=selectedAmounts[coinId]||getDefaultAmount(portfolioBalance),fee=amount*FEE;
   const coin=COINS.find(c=>c.id===coinId);
-  if(!confirm(`${t('confirmBuy')}\n${coin?.name} · $${amount.toFixed(2)}\n${t('entry')}: $${price.toFixed(2)}\n${t('totalFees')}: $${fee.toFixed(3)}`))return;
+  if(!confirm(`${t('confirmBuy')}\n${coin?.name} · ${curSym()}${amount.toFixed(2)}\n${t('entry')}: ${curSym()}${price.toFixed(2)}\n${t('totalFees')}: ${curSym()}${fee.toFixed(3)}`))return;
   try{
     await apiFetch('/api/portfolio/buy',{method:'POST',body:JSON.stringify({coinId,coinSymbol:coin?.symbol||coinId.toUpperCase(),amount,isManual:false})});
     delete selectedAmounts[coinId];
     await refreshPortfolio();renderCoins(lastData);renderPortfolio();
-    showToast(`${t('toastBuy')} ${coin?.symbol||coinId} · $${amount.toFixed(2)}`,'green');
+    showToast(`${t('toastBuy')} ${coin?.symbol||coinId} · ${curSym()}${amount.toFixed(2)}`,'green');
   }catch(e){showToast(e.message||'Buy failed','red');}
 }
 async function acceptSell(coinId){
   const price=currentPrices[coinId],p=portfolioPositions[coinId];if(!price||!p)return;
   const ev=p.units*price,ef=ev*FEE,ne=ev-ef,pnl=ne-p.entry_amount;
   const coin=COINS.find(c=>c.id===coinId);
-  if(!confirm(`${t('confirmSell')}\n${coin?.name} · ${p.units.toFixed(6)} ${coin?.symbol}\n${t('now')}: $${price.toFixed(2)}\n${t('pnl')}: ${pnl>=0?'+':''}$${pnl.toFixed(2)}`))return;
+  if(!confirm(`${t('confirmSell')}\n${coin?.name} · ${p.units.toFixed(6)} ${coin?.symbol}\n${t('now')}: ${curSym()}${price.toFixed(2)}\n${t('pnl')}: ${pnl>=0?'+':''}${curSym()}${pnl.toFixed(2)}`))return;
   try{
     const result=await apiFetch('/api/portfolio/sell',{method:'POST',body:JSON.stringify({coinId,pct:100,isManual:false})});
     await refreshPortfolio();await refreshTrades();renderCoins(lastData);renderPortfolio();
-    showToast(`${result.pnl>=0?'✅':'⚠️'} ${t('toastSell')} ${coin?.symbol||coinId} · ${t('pnl')}: ${result.pnl>=0?'+':''}$${result.pnl.toFixed(2)}`,result.pnl>=0?'green':'red');
+    showToast(`${result.pnl>=0?'✅':'⚠️'} ${t('toastSell')} ${coin?.symbol||coinId} · ${t('pnl')}: ${result.pnl>=0?'+':''}${curSym()}${result.pnl.toFixed(2)}`,result.pnl>=0?'green':'red');
   }catch(e){showToast(e.message||'Sell failed','red');}
 }
 function setRotateAmount(inputId,val,fromId,toId){const el=document.getElementById(inputId);if(el)el.value=parseFloat(val).toFixed(2);updateRotateInfo(inputId,fromId,toId);}
 function updateRotateInfo(inputId,fromId,toId){
   const el=document.getElementById(inputId),infoEl=document.getElementById(inputId+'-info');if(!el||!infoEl)return;
   const amount=parseFloat(el.value)||0,fees=amount*FEE*2,net=amount-fees,tc=COINS.find(c=>c.id===toId);
-  infoEl.textContent=`${t('netAmount')}: $${net.toFixed(2)} · ${t('totalFees')}: $${fees.toFixed(3)}`;
+  infoEl.textContent=`${t('netAmount')}: ${curSym()}${net.toFixed(2)} · ${t('totalFees')}: ${curSym()}${fees.toFixed(3)}`;
 }
 async function acceptRotatePartial(fromId,toId,inputId){
   const fp=currentPrices[fromId],tp=currentPrices[toId],p=portfolioPositions[fromId];if(!fp||!tp||!p)return;
@@ -1036,7 +1172,7 @@ async function acceptRotatePartial(fromId,toId,inputId){
   const maxV=p.units*fp,pct=Math.min(100,(amount/maxV)*100);
   const fc=COINS.find(c=>c.id===fromId),tc=COINS.find(c=>c.id===toId);
   const ev=p.units*(pct/100)*fp,fees=ev*FEE*2;
-  if(!confirm(`${t('confirmRotate')}\n${fc?.name}→${tc?.name}\n${t('sell')}: $${ev.toFixed(2)} (${pct.toFixed(0)}%)\n${t('totalFees')}: ~$${fees.toFixed(3)}`))return;
+  if(!confirm(`${t('confirmRotate')}\n${fc?.name}→${tc?.name}\n${t('sell')}: ${curSym()}${ev.toFixed(2)} (${pct.toFixed(0)}%)\n${t('totalFees')}: ~${curSym()}${fees.toFixed(3)}`))return;
   try{
     const balanceBefore=portfolioBalance;
     await apiFetch('/api/portfolio/sell',{method:'POST',body:JSON.stringify({coinId:fromId,pct,isManual:false})});
@@ -1059,13 +1195,13 @@ async function manualBuy(coinId,inputId){
   const price=currentPrices[coinId];if(!price)return;
   const input=document.getElementById(inputId),amount=parseFloat(input?.value);
   if(isNaN(amount)||amount<=0){alert(t('notEnoughBalance'));return;}
-  if(amount>portfolioBalance+0.01){alert(`${t('notEnoughBalance')}. Max: $${portfolioBalance.toFixed(2)}`);return;}
+  if(amount>portfolioBalance+0.01){alert(`${t('notEnoughBalance')}. Max: ${curSym()}${portfolioBalance.toFixed(2)}`);return;}
   const fee=amount*FEE,coin=COINS.find(c=>c.id===coinId);
-  if(!confirm(`${t('confirmBuy')}\n${coin?.name} · $${amount.toFixed(2)}\n${t('entry')}: $${price.toFixed(2)}\n${t('totalFees')}: $${fee.toFixed(3)}`))return;
+  if(!confirm(`${t('confirmBuy')}\n${coin?.name} · ${curSym()}${amount.toFixed(2)}\n${t('entry')}: ${curSym()}${price.toFixed(2)}\n${t('totalFees')}: ${curSym()}${fee.toFixed(3)}`))return;
   try{
     await apiFetch('/api/portfolio/buy',{method:'POST',body:JSON.stringify({coinId,coinSymbol:coin?.symbol||coinId.toUpperCase(),amount,isManual:true})});
     await refreshPortfolio();renderCoins(lastData);renderPortfolio();
-    showToast(`${t('toastManualBuy')} ${coin?.symbol||coinId} · $${amount.toFixed(2)}`,'green');
+    showToast(`${t('toastManualBuy')} ${coin?.symbol||coinId} · ${curSym()}${amount.toFixed(2)}`,'green');
   }catch(e){showToast(e.message||'Buy failed','red');}
 }
 async function manualSell(coinId,inputId){
@@ -1073,11 +1209,11 @@ async function manualSell(coinId,inputId){
   const input=document.getElementById(inputId),pct=Math.min(100,Math.max(1,parseFloat(input?.value)||100));
   const su=p.units*pct/100,ev=su*price,ef=ev*FEE,ne=ev-ef,sc=p.entry_amount*pct/100,pnl=ne-sc;
   const coin=COINS.find(c=>c.id===coinId);
-  if(!confirm(`${t('confirmSell')}\n${coin?.name} · ${pct}%\n${t('pnl')}: ${pnl>=0?'+':''}$${pnl.toFixed(2)}\n${t('totalFees')}: $${ef.toFixed(3)}`))return;
+  if(!confirm(`${t('confirmSell')}\n${coin?.name} · ${pct}%\n${t('pnl')}: ${pnl>=0?'+':''}${curSym()}${pnl.toFixed(2)}\n${t('totalFees')}: ${curSym()}${ef.toFixed(3)}`))return;
   try{
     const result=await apiFetch('/api/portfolio/sell',{method:'POST',body:JSON.stringify({coinId,pct,isManual:true})});
     await refreshPortfolio();await refreshTrades();renderCoins(lastData);renderPortfolio();
-    showToast(`${result.pnl>=0?'✅':'⚠️'} ${t('toastSell')} ${pct}% ${coin?.symbol||coinId} · ${result.pnl>=0?'+':''}$${result.pnl.toFixed(2)}`,result.pnl>=0?'green':'red');
+    showToast(`${result.pnl>=0?'✅':'⚠️'} ${t('toastSell')} ${pct}% ${coin?.symbol||coinId} · ${result.pnl>=0?'+':''}${curSym()}${result.pnl.toFixed(2)}`,result.pnl>=0?'green':'red');
   }catch(e){showToast(e.message||'Sell failed','red');}
 }
 function skipTrade(coinId){
@@ -1135,7 +1271,7 @@ function renderCoins(data){
   });
   list.innerHTML=sorted.map(coin=>{
     const d=data.find(x=>x.id===coin.id);if(!d)return'';
-    currentPrices[coin.id]=d.current_price;
+    currentPrices[coin.id]=cv(d.current_price);
     const sig=analyze(d.current_price,d.price_change_percentage_24h,d.high_24h,d.low_24h);
     const filtered=passesFilter(sig,d.price_change_percentage_24h);
     const hasPos=!!portfolioPositions[coin.id];
@@ -1144,18 +1280,19 @@ function renderCoins(data){
     const dsc=filtered?(sig.signal==='BUY'?'signal-buy':sig.signal==='SELL'?'signal-sell':'signal-hold'):'signal-hold';
     const dbc=filtered?(sig.signal==='BUY'?'badge-buy':sig.signal==='SELL'?'badge-sell':'badge-hold'):'badge-hold';
     const dsig=filtered?`${sig.strength?sig.strength+' ':''}${sig.signal}`:t('hold').toUpperCase();
-    const price=d.current_price>=1000?d.current_price.toLocaleString('en-US',{maximumFractionDigits:0}):d.current_price>=1?d.current_price.toFixed(2):d.current_price.toFixed(4);
+    const dispPrice=cv(d.current_price);
+    const price=dispPrice>=1000?dispPrice.toLocaleString('en-US',{maximumFractionDigits:0}):dispPrice>=1?dispPrice.toFixed(2):dispPrice.toFixed(4);
     const posData=hasPos?portfolioPositions[coin.id]:null;
-    const posVal=hasPos?posData.units*d.current_price:0;
+    const posVal=hasPos?posData.units*cv(d.current_price):0;
     const posPnl=hasPos?posVal-posData.entry_amount:0;
     let livePnl='';
-    if(hasPos){livePnl=`<div class="live-pnl${posPnl<0?' neg':''}">${posPnl>=0?'+':''}$${posPnl.toFixed(2)}</div>`;}
+    if(hasPos){livePnl=`<div class="live-pnl${posPnl<0?' neg':''}">${posPnl>=0?'+':''}${curSym()}${posPnl.toFixed(2)}</div>`;}
     const defAmt=selectedAmounts[coin.id]||getDefaultAmount(portfolioBalance);
     if(filtered&&sig.signal==='BUY'&&!hasPos&&!selectedAmounts[coin.id])selectedAmounts[coin.id]=defAmt;
     const rotateCandidates=Object.keys(portfolioPositions).filter(id=>id!==coin.id).map(fromId=>{
       const fd=lastData.find(x=>x.id===fromId);if(!fd)return null;
       const fsig=analyze(fd.current_price,fd.price_change_percentage_24h,fd.high_24h,fd.low_24h);
-      const fp=portfolioPositions[fromId],ev=fp.units*fd.current_price,fees=ev*FEE*2;
+      const fp=portfolioPositions[fromId],ev=fp.units*cv(fd.current_price),fees=ev*FEE*2;
       const fc=COINS.find(c=>c.id===fromId);
       if(fsig.signal==='SELL'||fsig.signal==='HOLD')return{fromId,fromName:fc?.name||fromId,fromSymbol:fc?.symbol||fromId,exitVal:ev,totalFees:fees};
       return null;
@@ -1165,17 +1302,17 @@ function renderCoins(data){
       const rotateBtns=rotateCandidates.map(r=>{
         const rid=`rot-${r.fromId}-${coin.id}`;
         return`<div style="margin-top:8px;padding:8px;background:var(--amber-bg);border-radius:var(--radius-md);border:0.5px solid var(--amber)">
-          <div style="font-size:12px;font-weight:500;color:var(--amber-text);margin-bottom:5px"><i class="ti ti-arrows-exchange"></i> ${t('rotateFrom')} ${r.fromName}</div>
-          <div style="font-size:11px;color:var(--amber-text);margin-bottom:6px">${t('invested')}: $${r.exitVal.toFixed(2)}</div>
+          <div style="font-size:12px;font-weight:500;color:var(--amber-text);margin-bottom:5px"><i class="ti ti-arrows-exchange"></i> ${t('rotateFrom')} ${r.fromName}${tradingMode==='real'?' (paper only)':''}</div>
+          <div style="font-size:11px;color:var(--amber-text);margin-bottom:6px">${t('invested')}: ${curSym()}${r.exitVal.toFixed(2)}</div>
           <div style="font-size:11px;color:var(--amber-text);margin-bottom:6px;font-weight:500">${t('howMuchRotate')}</div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">
-            ${[25,50,75].map(pct=>`<div onclick="event.stopPropagation();setRotateAmount('${rid}',${(r.exitVal*pct/100).toFixed(2)},'${r.fromId}','${coin.id}')" style="padding:4px 8px;font-size:11px;border-radius:var(--radius-md);background:var(--bg-primary);border:0.5px solid var(--amber);color:var(--amber-text);cursor:pointer">${pct}% · $${(r.exitVal*pct/100).toFixed(0)}</div>`).join('')}
+            ${[25,50,75].map(pct=>`<div onclick="event.stopPropagation();setRotateAmount('${rid}',${(r.exitVal*pct/100).toFixed(2)},'${r.fromId}','${coin.id}')" style="padding:4px 8px;font-size:11px;border-radius:var(--radius-md);background:var(--bg-primary);border:0.5px solid var(--amber);color:var(--amber-text);cursor:pointer">${pct}% · ${curSym()}${(r.exitVal*pct/100).toFixed(0)}</div>`).join('')}
             <div onclick="event.stopPropagation();setRotateAmount('${rid}',${r.exitVal.toFixed(2)},'${r.fromId}','${coin.id}')" style="padding:4px 8px;font-size:11px;border-radius:var(--radius-md);background:var(--bg-primary);border:0.5px solid var(--amber);color:var(--amber-text);cursor:pointer">100%</div>
           </div>
           <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
             <input type="number" id="${rid}" value="${r.exitVal.toFixed(2)}" min="1" max="${r.exitVal.toFixed(2)}" step="1" onclick="event.stopPropagation()" oninput="updateRotateInfo('${rid}','${r.fromId}','${coin.id}')" style="flex:1;padding:6px 8px;font-size:14px;border-radius:var(--radius-md);border:0.5px solid var(--amber);background:var(--bg-primary);color:var(--text-primary)">
           </div>
-          <div id="${rid}-info" style="font-size:11px;color:var(--amber-text);margin-bottom:6px">${t('netAmount')}: $${(r.exitVal-r.totalFees).toFixed(2)} · ${t('totalFees')}: $${r.totalFees.toFixed(3)}</div>
+          <div id="${rid}-info" style="font-size:11px;color:var(--amber-text);margin-bottom:6px">${t('netAmount')}: ${curSym()}${(r.exitVal-r.totalFees).toFixed(2)} · ${t('totalFees')}: ${curSym()}${r.totalFees.toFixed(3)}</div>
           <div style="display:flex;gap:8px">
             <button class="btn btn-accept" style="background:var(--amber-bg);color:var(--amber-text);border-color:var(--amber);flex:2" onclick="event.stopPropagation();acceptRotatePartial('${r.fromId}','${coin.id}','${rid}')"><i class="ti ti-arrows-exchange"></i> ${r.fromSymbol}→${coin.symbol}</button>
             <button class="btn btn-skip" style="flex:1" onclick="event.stopPropagation();skipTrade('${coin.id}')">${t('skip')}</button>
@@ -1187,23 +1324,23 @@ function renderCoins(data){
         <div class="amount-picker" style="margin-top:${rotateCandidates.length?'8px':'0'}">
           <div class="amount-picker-label"><i class="ti ti-coins"></i> ${rotateCandidates.length?t('cashBalance'):t('acceptBuy')}</div>
           <div class="amount-suggestions">${chips}</div>
-          <div class="custom-amount-row"><label>$</label><input class="custom-input" type="number" id="customAmt-${coin.id}" min="1" max="${portfolioBalance.toFixed(2)}" step="1" value="${defAmt.toFixed(2)}" onclick="event.stopPropagation()" oninput="onCustomAmtChange('${coin.id}',this.value)"></div>
+          <div class="custom-amount-row"><label>${curSym()}</label><input class="custom-input" type="number" id="customAmt-${coin.id}" min="1" max="${portfolioBalance.toFixed(2)}" step="1" value="${defAmt.toFixed(2)}" onclick="event.stopPropagation()" oninput="onCustomAmtChange('${coin.id}',this.value)"></div>
           <div class="amount-warning" id="amtWarn-${coin.id}"></div>
-          <div class="amount-info" id="amtInfo-${coin.id}">${t('totalFees')}: $${(defAmt*FEE).toFixed(3)}</div>
+          <div class="amount-info" id="amtInfo-${coin.id}">${t('totalFees')}: ${curSym()}${(defAmt*FEE).toFixed(3)}</div>
         </div>
         <div class="trade-btns">
-          <button class="btn btn-accept" id="acceptBtn-${coin.id}" onclick="event.stopPropagation();acceptTrade('${coin.id}')">${t('acceptBuy')} · $${defAmt.toFixed(2)}</button>
+          <button class="btn btn-accept" id="acceptBtn-${coin.id}" onclick="event.stopPropagation();(tradingMode==='real'?realBuy:acceptTrade)('${coin.id}')">${tradingMode==='real'?'⚡ Real buy':t('acceptBuy')} · ${curSym()}${defAmt.toFixed(2)}</button>
           <button class="btn btn-skip" onclick="event.stopPropagation();skipTrade('${coin.id}')">${t('skip')}</button>
         </div>`;
     }else if(filtered&&sig.signal==='SELL'&&hasPos){
-      const pnlV=posVal-posData.entryAmount;
+      const pnlV=posPnl;
       tradeBtns=`<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;padding:8px;background:var(--bg-secondary);border-radius:var(--radius-md)">
-        <div style="display:flex;justify-content:space-between"><span>${t('entry')}</span><span>$${posData.entryPrice.toFixed(2)}</span></div>
-        <div style="display:flex;justify-content:space-between;margin-top:3px"><span>${t('now')}</span><span>$${posVal.toFixed(2)}</span></div>
-        <div style="display:flex;justify-content:space-between;margin-top:3px;font-weight:500"><span>${t('pnl')}</span><span class="${pnlV>=0?'pos':'neg'}">${pnlV>=0?'+':''}$${pnlV.toFixed(2)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>${t('entry')}</span><span>${curSym()}${posData.entry_price.toFixed(2)}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px"><span>${t('now')}</span><span>${curSym()}${posVal.toFixed(2)}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px;font-weight:500"><span>${t('pnl')}</span><span class="${pnlV>=0?'pos':'neg'}">${pnlV>=0?'+':''}${curSym()}${pnlV.toFixed(2)}</span></div>
       </div>
       <div class="trade-btns">
-        <button class="btn btn-sell" onclick="event.stopPropagation();acceptSell('${coin.id}')">${t('acceptSell')}</button>
+        <button class="btn btn-sell" onclick="event.stopPropagation();(tradingMode==='real'?realSell:acceptSell)('${coin.id}')">${tradingMode==='real'?'⚡ Real sell':t('acceptSell')}</button>
         <button class="btn btn-skip" onclick="event.stopPropagation();skipTrade('${coin.id}')">${t('skip')}</button>
       </div>`;
     }else if(filtered&&sig.signal==='BUY'&&hasPos){
@@ -1217,18 +1354,18 @@ function renderCoins(data){
       <canvas id="${canvasId}" height="120" style="display:block;width:100%;height:120px"></canvas>
     </div>`;
     const manualSection=`<div style="margin-top:10px;border-top:0.5px solid var(--border);padding-top:10px">
-      <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px"><i class="ti ti-hand-click"></i> ${t('manualTrade')}</div>
+      <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px"><i class="ti ti-hand-click"></i> ${t('manualTrade')}${tradingMode==='real'?' (paper only)':''}</div>
       <div style="display:flex;gap:6px;margin-bottom:6px">
         <button onclick="event.stopPropagation();toggleManualPanel('mbuy-${coin.id}','msell-${coin.id}')" style="flex:1;padding:7px;font-size:12px;border-radius:var(--radius-md);border:0.5px solid var(--green);background:var(--green-bg);color:var(--green-text);cursor:pointer;font-weight:500"><i class="ti ti-plus"></i> ${t('mBuy')}</button>
         <button onclick="event.stopPropagation();toggleManualPanel('msell-${coin.id}','mbuy-${coin.id}')" style="flex:1;padding:7px;font-size:12px;border-radius:var(--radius-md);border:0.5px solid ${hasPos?'var(--red)':'var(--border)'};background:${hasPos?'var(--red-bg)':'var(--bg-secondary)'};color:${hasPos?'var(--red-text)':'var(--text-tertiary)'};cursor:${hasPos?'pointer':'not-allowed'};font-weight:500" ${!hasPos?'disabled':''}><i class="ti ti-minus"></i> ${t('mSell')}</button>
       </div>
       <div id="mbuy-${coin.id}" style="display:none;background:var(--green-bg);border-radius:var(--radius-md);padding:10px;border:0.5px solid var(--green)">
-        <div style="font-size:12px;color:var(--green-text);font-weight:500;margin-bottom:6px">${t('mBuy')} ${coin.name} · ${t('cashBalance')}: $${portfolioBalance.toFixed(2)}</div>
+        <div style="font-size:12px;color:var(--green-text);font-weight:500;margin-bottom:6px">${t('mBuy')} ${coin.name} · ${t('cashBalance')}: ${curSym()}${portfolioBalance.toFixed(2)}</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
-          ${[10,25,50,100].filter(p=>portfolioBalance*p/100>=1).map(p=>`<div onclick="event.stopPropagation();setManualInput('mba-${coin.id}',${(portfolioBalance*p/100).toFixed(2)})" style="padding:4px 8px;font-size:11px;border-radius:var(--radius-md);background:var(--bg-primary);border:0.5px solid var(--green);color:var(--green-text);cursor:pointer">${p}% · $${(portfolioBalance*p/100).toFixed(0)}</div>`).join('')}
+          ${[10,25,50,100].filter(p=>portfolioBalance*p/100>=1).map(p=>`<div onclick="event.stopPropagation();setManualInput('mba-${coin.id}',${(portfolioBalance*p/100).toFixed(2)})" style="padding:4px 8px;font-size:11px;border-radius:var(--radius-md);background:var(--bg-primary);border:0.5px solid var(--green);color:var(--green-text);cursor:pointer">${p}% · ${curSym()}${(portfolioBalance*p/100).toFixed(0)}</div>`).join('')}
           <div onclick="event.stopPropagation();setManualInput('mba-${coin.id}',${portfolioBalance.toFixed(2)})" style="padding:4px 8px;font-size:11px;border-radius:var(--radius-md);background:var(--bg-primary);border:0.5px solid var(--green);color:var(--green-text);cursor:pointer">100%</div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center"><span style="font-size:12px;color:var(--green-text)">$</span>
+        <div style="display:flex;gap:6px;align-items:center"><span style="font-size:12px;color:var(--green-text)">${curSym()}</span>
           <input type="number" id="mba-${coin.id}" placeholder="0" min="1" max="${portfolioBalance.toFixed(2)}" step="1" onclick="event.stopPropagation()" style="flex:1;padding:6px 8px;font-size:14px;border-radius:var(--radius-md);border:0.5px solid var(--green);background:var(--bg-primary);color:var(--text-primary)">
           <button onclick="event.stopPropagation();manualBuy('${coin.id}','mba-${coin.id}')" style="padding:7px 14px;font-size:13px;font-weight:500;border-radius:var(--radius-md);background:var(--green);color:#fff;border:none;cursor:pointer">${t('mBuy')}</button>
         </div>
@@ -1236,7 +1373,7 @@ function renderCoins(data){
       </div>
       <div id="msell-${coin.id}" style="display:none;background:var(--red-bg);border-radius:var(--radius-md);padding:10px;border:0.5px solid var(--red)">
         <div style="font-size:12px;color:var(--red-text);font-weight:500;margin-bottom:6px">${t('mSell')} ${coin.name}</div>
-        ${hasPos?`<div style="font-size:11px;color:var(--red-text);margin-bottom:8px">${posData.units.toFixed(6)} ${coin.symbol} · $${posVal.toFixed(2)} · ${t('pnl')}: <strong>${posPnl>=0?'+':''}$${posPnl.toFixed(2)}</strong></div>
+        ${hasPos?`<div style="font-size:11px;color:var(--red-text);margin-bottom:8px">${posData.units.toFixed(6)} ${coin.symbol} · ${curSym()}${posVal.toFixed(2)} · ${t('pnl')}: <strong>${posPnl>=0?'+':''}${curSym()}${posPnl.toFixed(2)}</strong></div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
           ${[25,50,75].map(p=>`<div onclick="event.stopPropagation();setManualSellPct('msa-${coin.id}',${p})" style="padding:4px 8px;font-size:11px;border-radius:var(--radius-md);background:var(--bg-primary);border:0.5px solid var(--red);color:var(--red-text);cursor:pointer">${p}%</div>`).join('')}
           <div onclick="event.stopPropagation();setManualSellPct('msa-${coin.id}',100)" style="padding:4px 8px;font-size:11px;border-radius:var(--radius-md);background:var(--bg-primary);border:0.5px solid var(--red);color:var(--red-text);cursor:pointer">100%</div>
@@ -1254,7 +1391,7 @@ function renderCoins(data){
         <div class="coin-icon" style="background:${coin.bg};color:${coin.tc}">${coin.symbol.substring(0,2)}</div>
         <div class="coin-info">
           <div class="coin-name">${coin.name}${hasPos?` <span style="font-size:10px;color:var(--green)">● ${t('holdingNote')}</span>`:''}${isAutoQueued?' <span class="auto-badge"><i class="ti ti-robot"></i></span>':''}</div>
-          <div class="coin-price">$${price}</div>${livePnl}
+          <div class="coin-price">${curSym()}${price}</div>${livePnl}
         </div>
         <div class="coin-right">
           <div><span class="signal-badge ${dbc}">${dsig}</span></div>
@@ -1265,16 +1402,16 @@ function renderCoins(data){
         ${hasPos?`<div style="background:var(--green-bg);border-radius:var(--radius-md);padding:8px 10px;margin-bottom:8px;border:0.5px solid var(--green)">
           <div style="display:flex;justify-content:space-between;align-items:baseline">
             <span style="font-size:12px;font-weight:600;color:var(--green-text)">${t('yourPosition')}</span>
-            <span style="font-size:15px;font-weight:700;color:var(--green-text)">$${posVal.toFixed(2)} <span style="font-size:12px">(${posPnl>=0?'+':''}${(posPnl/posData.entry_amount*100).toFixed(2)}%)</span></span>
+            <span style="font-size:15px;font-weight:700;color:var(--green-text)">${curSym()}${posVal.toFixed(2)} <span style="font-size:12px">(${posPnl>=0?'+':''}${(posPnl/posData.entry_amount*100).toFixed(2)}%)</span></span>
           </div>
-          <div style="font-size:11px;color:var(--green-text);margin-top:3px">${posData.units.toFixed(6)} ${coin.symbol} · ${t('entry')} $${posData.entry_price.toFixed(2)} · ${t('pnl')} <strong>${posPnl>=0?'+':''}$${posPnl.toFixed(2)}</strong></div>
-          <div style="font-size:11px;color:var(--green-text);margin-top:1px">${t('invested')} $${posData.entry_amount.toFixed(2)} · ${t('now')} $${d.current_price>=1?d.current_price.toFixed(2):d.current_price.toFixed(4)}</div>
+          <div style="font-size:11px;color:var(--green-text);margin-top:3px">${posData.units.toFixed(6)} ${coin.symbol} · ${t('entry')} ${curSym()}${posData.entry_price.toFixed(2)} · ${t('pnl')} <strong>${posPnl>=0?'+':''}${curSym()}${posPnl.toFixed(2)}</strong></div>
+          <div style="font-size:11px;color:var(--green-text);margin-top:1px">${t('invested')} ${curSym()}${posData.entry_amount.toFixed(2)} · ${t('now')} ${curSym()}${dispPrice>=1?dispPrice.toFixed(2):dispPrice.toFixed(4)}</div>
         </div>`:''}
         <div class="detail-row"><span class="detail-label">${t('rsi')}</span><span class="detail-value" id="rsi-${coin.id}">${sig.rsi}</span></div>
         <div class="detail-row"><span class="detail-label">${t('ma7')}</span><span class="detail-value" id="ma7-${coin.id}">—</span></div>
         <div class="detail-row"><span class="detail-label">${t('ma25')}</span><span class="detail-value" id="ma25-${coin.id}">—</span></div>
         <div class="detail-row"><span class="detail-label">${t('volRatio')}</span><span class="detail-value" id="vol-${coin.id}">—</span></div>
-        <div class="detail-row"><span class="detail-label">${t('high24')} / ${t('low24')}</span><span class="detail-value">$${d.high_24h>=1?d.high_24h.toFixed(2):d.high_24h.toFixed(4)} / $${d.low_24h>=1?d.low_24h.toFixed(2):d.low_24h.toFixed(4)}</span></div>
+        <div class="detail-row"><span class="detail-label">${t('high24')} / ${t('low24')}</span><span class="detail-value">${curSym()}${cv(d.high_24h)>=1?cv(d.high_24h).toFixed(2):cv(d.high_24h).toFixed(4)} / ${curSym()}${cv(d.low_24h)>=1?cv(d.low_24h).toFixed(2):cv(d.low_24h).toFixed(4)}</span></div>
         <div class="detail-row"><span class="detail-label">${t('rank')}</span><span class="detail-value">#${d.market_cap_rank}</span></div>
         <div class="reason-text" id="reason-${coin.id}">${sig.reason}</div>
         ${chartSection}${tradeBtns}${manualSection}
@@ -1298,29 +1435,29 @@ function renderPortfolio(){
   const total=portfolioBalance+invested;
   const closed=tradesHistory.filter(tr=>tr.trade_type==='SELL');
   const totalPnl=closed.reduce((a,tr)=>a+(tr.pnl||0),0),wins=closed.filter(t=>t.pnl>0).length;
-  document.getElementById('pTotal').textContent='$'+total.toFixed(2);
-  const pe=document.getElementById('pPnl');pe.textContent=(totalPnl>=0?'+':'')+'$'+totalPnl.toFixed(2);pe.className='metric-value '+(totalPnl>0?'pos':totalPnl<0?'neg':'');
+  document.getElementById('pTotal').textContent=curSym()+total.toFixed(2);
+  const pe=document.getElementById('pPnl');pe.textContent=(totalPnl>=0?'+':'')+curSym()+totalPnl.toFixed(2);pe.className='metric-value '+(totalPnl>0?'pos':totalPnl<0?'neg':'');
   const startBalance=total-totalPnl; // every account starts at a fixed paper balance; this derives it in whatever currency is displayed
   document.getElementById('pPnlPct').textContent=(totalPnl>=0?'+':'')+(startBalance>0?(totalPnl/startBalance*100).toFixed(2):'0.00')+'%';
-  document.getElementById('pCash').textContent='$'+portfolioBalance.toFixed(2);
+  document.getElementById('pCash').textContent=curSym()+portfolioBalance.toFixed(2);
   document.getElementById('pCashPct').textContent=(total>0?(portfolioBalance/total*100):100).toFixed(0)+'% '+t('ofPortfolio');
   document.getElementById('pWin').textContent=closed.length>0?((wins/closed.length)*100).toFixed(0)+'%':'—';
   const pws=document.getElementById('pWinSub');if(pws)pws.textContent=closed.length>0?`${wins} ${t('wins')} / ${closed.length-wins} ${t('losses')}`:t('noTrades2');
   document.getElementById('pCount').textContent=closed.length;
   const psk=document.getElementById('pSkip');if(psk)psk.textContent='';
-  document.getElementById('pInvested').textContent='$'+invested.toFixed(2);
+  document.getElementById('pInvested').textContent=curSym()+invested.toFixed(2);
   const pip=document.getElementById('pInvestedPct');if(pip)pip.textContent=(total>0?(invested/total*100):0).toFixed(0)+'% '+t('ofPortfolio');
   const op=document.getElementById('openPositions'),ids=Object.keys(portfolioPositions);
   op.innerHTML=ids.length===0?`<div class="empty-state">${t('noPositions')}</div>`:ids.map(id=>{
     const p=portfolioPositions[id],price=currentPrices[id]||p.entry_price,val=p.units*price,pnl=val-p.entry_amount,c=COINS.find(x=>x.id===id);
     return`<div class="open-position">
       <div style="display:flex;justify-content:space-between;align-items:baseline">
-        <span style="font-size:15px;font-weight:600">$${val.toFixed(2)}</span>
+        <span style="font-size:15px;font-weight:600">${curSym()}${val.toFixed(2)}</span>
         <span style="font-size:13px;font-weight:500" class="${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${(pnl/p.entry_amount*100).toFixed(2)}%</span>
       </div>
       <div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-top:3px">${c?c.name:id}${p.is_auto?` <span class="auto-badge"><i class="ti ti-robot"></i> AUTO</span>`:''}</div>
-      <div style="font-size:11px;color:var(--text-secondary);margin-top:2px">${p.units.toFixed(6)} ${c?c.symbol:id} · ${t('entry')} $${p.entry_price.toFixed(2)} · ${t('now')} $${price.toFixed(2)}</div>
-      <div style="font-size:11px;color:var(--text-secondary);margin-top:1px">${t('invested')} $${p.entry_amount.toFixed(2)} · ${t('pnl')} <span class="${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</span></div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:2px">${p.units.toFixed(6)} ${c?c.symbol:id} · ${t('entry')} ${curSym()}${p.entry_price.toFixed(2)} · ${t('now')} ${curSym()}${price.toFixed(2)}</div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:1px">${t('invested')} ${curSym()}${p.entry_amount.toFixed(2)} · ${t('pnl')} <span class="${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${curSym()}${pnl.toFixed(2)}</span></div>
     </div>`;
   }).join('');
 }
@@ -1356,7 +1493,7 @@ function renderHistory(){
       rpt.innerHTML=`
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
           <span style="font-size:13px;color:var(--text-secondary)">${periodTrades.length} ${t('trades')}</span>
-          <span style="font-size:22px;font-weight:700" class="${totalPnl>=0?'pos':'neg'}">${totalPnl>=0?'+':''}$${totalPnl.toFixed(2)}</span>
+          <span style="font-size:22px;font-weight:700" class="${totalPnl>=0?'pos':'neg'}">${totalPnl>=0?'+':''}${curSym()}${totalPnl.toFixed(2)}</span>
         </div>
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px">
           <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:8px">
@@ -1366,17 +1503,17 @@ function renderHistory(){
           </div>
           <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:8px">
             <div style="font-size:10px;color:var(--text-tertiary)">${t('avgPerTrade')}</div>
-            <div style="font-size:16px;font-weight:600" class="${avgPnl>=0?'pos':'neg'}">${avgPnl>=0?'+':''}$${avgPnl.toFixed(2)}</div>
-            <div style="font-size:10px;color:var(--text-tertiary)">${t('feesPaid')}: $${totalFees.toFixed(3)}</div>
+            <div style="font-size:16px;font-weight:600" class="${avgPnl>=0?'pos':'neg'}">${avgPnl>=0?'+':''}${curSym()}${avgPnl.toFixed(2)}</div>
+            <div style="font-size:10px;color:var(--text-tertiary)">${t('feesPaid')}: ${curSym()}${totalFees.toFixed(3)}</div>
           </div>
           <div style="background:var(--green-bg);border-radius:var(--radius-md);padding:8px">
             <div style="font-size:10px;color:var(--green-text)">${t('bestTrade')}</div>
-            <div style="font-size:15px;font-weight:600;color:var(--green-text)">${best.pnl>=0?'+':''}$${best.pnl.toFixed(2)}</div>
+            <div style="font-size:15px;font-weight:600;color:var(--green-text)">${best.pnl>=0?'+':''}${curSym()}${best.pnl.toFixed(2)}</div>
             <div style="font-size:10px;color:var(--green-text)">${best.coin_symbol}</div>
           </div>
           <div style="background:var(--red-bg);border-radius:var(--radius-md);padding:8px">
             <div style="font-size:10px;color:var(--red-text)">${t('worstTrade')}</div>
-            <div style="font-size:15px;font-weight:600;color:var(--red-text)">${worst.pnl>=0?'+':''}$${worst.pnl.toFixed(2)}</div>
+            <div style="font-size:15px;font-weight:600;color:var(--red-text)">${worst.pnl>=0?'+':''}${curSym()}${worst.pnl.toFixed(2)}</div>
             <div style="font-size:10px;color:var(--red-text)">${worst.coin_symbol}</div>
           </div>
         </div>
@@ -1390,7 +1527,7 @@ function renderHistory(){
     const c=COINS.find(x=>x.id===tr.coin_id),date=new Date(tr.closed_at).toLocaleDateString('en-CA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
     const pct=tr.amount_usd?((tr.pnl/tr.amount_usd)*100).toFixed(2):'0.00';
     const tradeType=tr.is_auto?'AUTO':tr.is_manual?'MANUAL':'SIGNAL';
-    return`<div class="trade-item"><div class="trade-header"><span class="trade-coin">${c?c.name:tr.coin_symbol} <span style="font-size:11px;color:var(--text-tertiary)">${tradeType}</span></span><span class="trade-pnl ${tr.pnl>=0?'pos':'neg'}">${tr.pnl>=0?'+':''}$${tr.pnl.toFixed(2)} (${pct}%)</span></div><div class="trade-meta">${t('entry')} $${tr.entry_price.toFixed(2)} → $${tr.exit_price.toFixed(2)} · ${t('totalFees')} $${tr.fee.toFixed(3)} · ${date}</div></div>`;
+    return`<div class="trade-item"><div class="trade-header"><span class="trade-coin">${c?c.name:tr.coin_symbol} <span style="font-size:11px;color:var(--text-tertiary)">${tradeType}</span></span><span class="trade-pnl ${tr.pnl>=0?'pos':'neg'}">${tr.pnl>=0?'+':''}${curSym()}${tr.pnl.toFixed(2)} (${pct}%)</span></div><div class="trade-meta">${t('entry')} ${curSym()}${tr.entry_price.toFixed(2)} → ${curSym()}${tr.exit_price.toFixed(2)} · ${t('totalFees')} ${curSym()}${tr.fee.toFixed(3)} · ${date}</div></div>`;
   }).join('')||`<div class="empty-state">${t('noTradesPeriod')}</div>`;
 }
 
@@ -1415,9 +1552,9 @@ function renderAutoTab(){
   updateRiskDisplay(appSettings.auto_risk_pct||25);
   const delay=document.getElementById('autoDelay');if(delay)delay.value=appSettings.auto_delay_min||5;
   const qEl=document.getElementById('autoQueue');
-  if(qEl)qEl.innerHTML=!autoQueue.length?`<div class="empty-state">${t('noQueue')}</div>`:autoQueue.map(q=>{const coin=COINS.find(c=>c.id===q.coin_id);const mins=Math.max(0,Math.round((q.execute_at-Date.now())/60000));return`<div class="auto-queue-item"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;font-weight:500">${coin?.name||q.coin_id}</span><span class="signal-badge ${q.signal_type==='BUY'?'badge-buy':'badge-sell'}">${q.signal_strength} ${q.signal_type}</span></div><div style="font-size:11px;color:var(--blue-text);margin-top:4px">${t('queued')} $${q.price_at_signal?.toFixed(2)||'—'} · ${t('executesIn')} ~${mins} ${t('minDelay')}</div></div>`;}).join('');
+  if(qEl)qEl.innerHTML=!autoQueue.length?`<div class="empty-state">${t('noQueue')}</div>`:autoQueue.map(q=>{const coin=COINS.find(c=>c.id===q.coin_id);const mins=Math.max(0,Math.round((q.execute_at-Date.now())/60000));return`<div class="auto-queue-item"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;font-weight:500">${coin?.name||q.coin_id}</span><span class="signal-badge ${q.signal_type==='BUY'?'badge-buy':'badge-sell'}">${q.signal_strength} ${q.signal_type}</span></div><div style="font-size:11px;color:var(--blue-text);margin-top:4px">${t('queued')} ${curSym()}${q.price_at_signal?.toFixed(2)||'—'} · ${t('executesIn')} ~${mins} ${t('minDelay')}</div></div>`;}).join('');
   const logEl=document.getElementById('autoLog'),logs=tradesHistory.filter(tr=>tr.is_auto);
-  if(logEl)logEl.innerHTML=!logs.length?`<div class="empty-state">${t('noAutoLog')}</div>`:logs.slice(0,20).map(l=>{const coin=COINS.find(c=>c.id===l.coin_id);const date=new Date(l.created_at).toLocaleDateString('en-CA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});const hasPnl=l.trade_type==='SELL';return`<div class="trade-item"><div class="trade-header"><span class="trade-coin">${coin?.name||l.coin_symbol} <span class="auto-badge"><i class="ti ti-robot"></i> AUTO</span></span><span style="font-size:13px;font-weight:500" class="${l.trade_type==='BUY'?'pos':'neg'}">${l.trade_type} $${l.amount_usd?.toFixed(2)}</span></div><div class="trade-meta">${t('entry')} $${l.price?.toFixed(2)} · ${date}${hasPnl?` · ${t('pnl')} <span class="${l.pnl>=0?'pos':'neg'}">${l.pnl>=0?'+':''}$${l.pnl.toFixed(2)}</span>`:''}</div></div>`;}).join('');
+  if(logEl)logEl.innerHTML=!logs.length?`<div class="empty-state">${t('noAutoLog')}</div>`:logs.slice(0,20).map(l=>{const coin=COINS.find(c=>c.id===l.coin_id);const date=new Date(l.created_at).toLocaleDateString('en-CA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});const hasPnl=l.trade_type==='SELL';return`<div class="trade-item"><div class="trade-header"><span class="trade-coin">${coin?.name||l.coin_symbol} <span class="auto-badge"><i class="ti ti-robot"></i> AUTO</span></span><span style="font-size:13px;font-weight:500" class="${l.trade_type==='BUY'?'pos':'neg'}">${l.trade_type} ${curSym()}${l.amount_usd?.toFixed(2)}</span></div><div class="trade-meta">${t('entry')} ${curSym()}${l.price?.toFixed(2)} · ${date}${hasPnl?` · ${t('pnl')} <span class="${l.pnl>=0?'pos':'neg'}">${l.pnl>=0?'+':''}${curSym()}${l.pnl.toFixed(2)}</span>`:''}</div></div>`;}).join('');
   // Exclusion list
   const exTitle=document.getElementById('lExcludeTitle');if(exTitle)exTitle.textContent=t('excludeTitle');
   const exDesc=document.getElementById('lExcludeDesc');if(exDesc)exDesc.textContent=t('excludeDesc');
@@ -1457,7 +1594,7 @@ async function showTab(name){
   keys.forEach(k=>{const btn=document.getElementById(`tab-${k}-btn`);if(btn)btn.classList.toggle('active',k===name);});
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   const panel=document.getElementById('tab-'+name);if(panel)panel.classList.add('active');
-  if(name==='portfolio'){await refreshPortfolio();await refreshTrades();renderPortfolio();}
+  if(name==='portfolio'){await refreshPortfolio();await refreshTrades();renderPortfolio();renderPortfolioModeToggle();if(tradingMode==='real'){await refreshRealPortfolio();await refreshRealOrders();renderRealPortfolioView();}}
   if(name==='history'){await refreshTrades();renderHistory();}
   if(name==='auto'){await refreshAutoQueue();await refreshTrades();renderAutoTab();}
   if(name==='settings')loadSettings();
@@ -1472,6 +1609,8 @@ function loadSettings(){
   el('sSize',appSettings.tradeSize||'25');
   el('sCustomDefault',appSettings.customDefault||'');
   el('sLang',appSettings.lang||'en');
+  el('sCurrency',currentUser?.currency||'usd');
+  [10,25,50,75].forEach(v=>{const o=document.getElementById('oSize'+v);if(o)o.textContent=curSym()+v;});
   const row=document.getElementById('customDefaultRow');if(row)row.style.display=appSettings.tradeSize==='custom'?'flex':'none';
   renderWatchlistDisplay();
   renderCustomCoinsSection();
@@ -1592,9 +1731,13 @@ async function submitTermsAcceptance(){
   await loadUser();
   if(!currentUser)return; // loadUser() already redirected to login.html
   await maybeShowTermsGate();
+  await refreshFxRate();
   loadAppSettings();loadSettings();applyLanguage();
   showTab('signals');
   await refreshPortfolio();await refreshTrades();await refreshAutoQueue();
+  await renderApiKeys(); // populates hasActiveKrakenKey so the Real toggle is correct from first load
+  renderPortfolioModeToggle();
+  if(tradingMode==='real'){await refreshRealPortfolio();await refreshRealOrders();renderRealPortfolioView();}
   await fetchData();startTimer();
 })();
 </script>
