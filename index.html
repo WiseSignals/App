@@ -310,6 +310,16 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
       <div id="watchlistDisplay" style="font-size:12px;color:var(--text-secondary);line-height:1.8"></div>
       <div id="lWatchlistDesc" style="font-size:11px;color:var(--text-tertiary);margin-top:6px"></div>
     </div>
+    <div class="settings-section">
+      <div class="settings-title" id="lCustomCoinsTitle">My Coins (Platinum)</div>
+      <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:10px" id="lCustomCoinsDesc">Add any CoinGecko coin ID to trade it here, in addition to the main watchlist.</div>
+      <div id="customCoinsList" style="margin-bottom:10px"></div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="customCoinInput" placeholder="e.g. dogecoin" onkeydown="if(event.key==='Enter')addCustomCoin()" style="flex:1;padding:8px;font-size:13px;border-radius:var(--radius-md);border:0.5px solid var(--border);background:var(--bg-secondary);color:var(--text-primary)">
+        <button onclick="addCustomCoin()" style="padding:8px 14px;font-size:13px;font-weight:500;border-radius:var(--radius-md);background:var(--green);color:#fff;border:none;cursor:pointer" id="btnAddCustomCoin">Add</button>
+      </div>
+      <div id="customCoinsCount" style="font-size:11px;color:var(--text-tertiary);margin-top:6px"></div>
+    </div>
     <div style="text-align:center;font-size:11px;color:var(--text-tertiary);padding:1rem">WiseSignals · Phase 2</div>
   </div>
 </div>
@@ -399,6 +409,10 @@ en:{
   sigSens:'Signal Sensitivity',minStrength:'Min signal strength',minMove:'Min 24h move',
   defAmount:'Default Trade Amount',quickPreset:'Quick preset',custom:'Custom ($)',customAmt:'Amount ($)',
   watchlistTitle:'Watchlist (15 coins, daily)',watchlistDesc:'Updated daily based on volume, volatility and signal quality. Held coins are always kept.',
+  customCoinsTitle:'My Coins (Platinum)',customCoinsDesc:'Add any CoinGecko coin ID to trade it here, in addition to the main watchlist.',
+  customCoinsLocked:'Requires Platinum plan',noCustomCoins:'No custom coins added yet.',remove:'Remove',coinsAdded:'coins added',
+  couldNotLoadCoins:'Could not load coins.',addCoinBtn:'Add',addedCoin:'added',couldNotAddCoin:'Could not add coin',
+  coinRemoved:'Coin removed',couldNotRemoveCoin:'Could not remove coin',
   reset:'Reset paper portfolio to $100',
   manualTrade:'Manual trade',mBuy:'Buy',mSell:'Sell',
   acceptBuy:'Accept BUY',acceptSell:'Accept SELL',skip:'Skip',
@@ -460,6 +474,10 @@ fa:{
   sigSens:'حساسیت سیگنال',minStrength:'حداقل قدرت سیگنال',minMove:'حداقل تغییر ۲۴ ساعته',
   defAmount:'مقدار پیش‌فرض معامله',quickPreset:'پیش‌تنظیم سریع',custom:'دلخواه ($)',customAmt:'مقدار ($)',
   watchlistTitle:'واچ‌لیست (۱۵ کوین، بروزرسانی روزانه)',watchlistDesc:'روزانه بر اساس حجم، نوسان و کیفیت سیگنال بروز می‌شود. کوین‌هایی که دارید همیشه نگه داشته می‌شوند.',
+  customCoinsTitle:'کوین‌های من (پلاتینیوم)',customCoinsDesc:'هر شناسه کوین از CoinGecko را اضافه کنید تا علاوه بر واچ‌لیست اصلی، آن را هم معامله کنید.',
+  customCoinsLocked:'نیازمند پلن پلاتینیوم',noCustomCoins:'هنوز کوین سفارشی اضافه نشده.',remove:'حذف',coinsAdded:'کوین اضافه شده',
+  couldNotLoadCoins:'بارگذاری کوین‌ها ممکن نشد.',addCoinBtn:'افزودن',addedCoin:'اضافه شد',couldNotAddCoin:'افزودن کوین ممکن نشد',
+  coinRemoved:'کوین حذف شد',couldNotRemoveCoin:'حذف کوین ممکن نشد',
   reset:'ریست پورتفولیوی مجازی به ۱۰۰ دلار',
   manualTrade:'معامله دستی',mBuy:'خرید',mSell:'فروش',
   acceptBuy:'تأیید خرید',acceptSell:'تأیید فروش',skip:'رد کن',
@@ -521,6 +539,10 @@ es:{
   sigSens:'Sensibilidad de señal',minStrength:'Fuerza mínima',minMove:'Movimiento mín 24h',
   defAmount:'Monto predeterminado',quickPreset:'Preajuste rápido',custom:'Personalizado ($)',customAmt:'Monto ($)',
   watchlistTitle:'Lista de seguimiento (15 monedas)',watchlistDesc:'Actualizada diariamente por volumen, volatilidad y calidad de señal. Las monedas que tienes siempre se mantienen.',
+  customCoinsTitle:'Mis monedas (Platinum)',customCoinsDesc:'Agrega cualquier ID de moneda de CoinGecko para operarla aquí, además de la lista principal.',
+  customCoinsLocked:'Requiere plan Platinum',noCustomCoins:'Aún no has agregado monedas personalizadas.',remove:'Eliminar',coinsAdded:'monedas agregadas',
+  couldNotLoadCoins:'No se pudieron cargar las monedas.',addCoinBtn:'Agregar',addedCoin:'agregada',couldNotAddCoin:'No se pudo agregar la moneda',
+  coinRemoved:'Moneda eliminada',couldNotRemoveCoin:'No se pudo eliminar la moneda',
   reset:'Reiniciar portafolio a $100',
   manualTrade:'Operación manual',mBuy:'Comprar',mSell:'Vender',
   acceptBuy:'Aceptar COMPRA',acceptSell:'Aceptar VENTA',skip:'Omitir',
@@ -598,7 +620,7 @@ function applyLanguage(){
   const r=appSettings.auto_risk_pct||25,d=appSettings.auto_delay_min||5;
   const adesc=document.getElementById('autoDesc');if(adesc)adesc.innerHTML=t('autoDesc').replace('{r}',r).replace('{d}',d);
   // Settings labels
-  const sm={lSigSens:'sigSens',lMinStrength:'minStrength',lMinMove:'minMove',lDefAmount:'defAmount',lQuickPreset:'quickPreset',lCustomAmt:'customAmt',lWatchlistTitle:'watchlistTitle',lWatchlistDesc:'watchlistDesc'};
+  const sm={lSigSens:'sigSens',lMinStrength:'minStrength',lMinMove:'minMove',lDefAmount:'defAmount',lQuickPreset:'quickPreset',lCustomAmt:'customAmt',lWatchlistTitle:'watchlistTitle',lWatchlistDesc:'watchlistDesc',lCustomCoinsTitle:'customCoinsTitle',lCustomCoinsDesc:'customCoinsDesc'};
   Object.entries(sm).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   const oc=document.getElementById('oCustom');if(oc)oc.textContent=t('custom');
   const oa=document.getElementById('oAll');if(oa)oa.textContent=t('allSignals');
@@ -823,7 +845,19 @@ function updateRiskDisplay(v){
 // so the coin list is just whatever came back — no client-side scoring needed.
 function updateWatchlist(){
   if(lastData&&lastData.length>0){
-    COINS=BASE_COINS.filter(c=>lastData.some(d=>d.id===c.id));
+    const baseCoins=BASE_COINS.filter(c=>lastData.some(d=>d.id===c.id));
+    let customCoins=[];
+    if(currentUser?.plan==='platinum'){
+      try{
+        const customIds=JSON.parse(currentUser.custom_coins||'[]');
+        customCoins=customIds.map(id=>{
+          const d=lastData.find(x=>x.id===id);
+          if(!d)return null;
+          return{id:d.id,symbol:d.symbol.toUpperCase(),name:d.name,bg:'#EEEDFE',tc:'#3C3489'};
+        }).filter(Boolean);
+      }catch(e){}
+    }
+    COINS=[...baseCoins,...customCoins];
     if(COINS.length<8)COINS=BASE_COINS.slice(0,15);
   }
   renderWatchlistDisplay();
@@ -1435,6 +1469,60 @@ function loadSettings(){
   el('sLang',appSettings.lang||'en');
   const row=document.getElementById('customDefaultRow');if(row)row.style.display=appSettings.tradeSize==='custom'?'flex':'none';
   renderWatchlistDisplay();
+  renderCustomCoinsSection();
+}
+
+// ── CUSTOM COINS (Platinum) ────────────────────────────────────
+async function renderCustomCoinsSection(){
+  const listEl=document.getElementById('customCoinsList');
+  const countEl=document.getElementById('customCoinsCount');
+  const addRow=document.getElementById('customCoinInput')?.parentElement;
+  if(!listEl)return;
+  const plan=currentUser?.plan||'free';
+  if(PLAN_HIERARCHY[plan]<PLAN_HIERARCHY.platinum){
+    listEl.innerHTML=`<div style="padding:10px;background:var(--bg-secondary);border-radius:var(--radius-md);font-size:12px;color:var(--text-tertiary);text-align:center">🔒 ${t('customCoinsLocked')}</div>`;
+    if(addRow)addRow.style.display='none';
+    if(countEl)countEl.textContent='';
+    return;
+  }
+  if(addRow)addRow.style.display='flex';
+  try{
+    const data=await apiFetch('/api/user/coins');
+    const coins=data.coins||[];
+    listEl.innerHTML=!coins.length?`<div style="font-size:12px;color:var(--text-tertiary);text-align:center;padding:6px">${t('noCustomCoins')}</div>`:coins.map(id=>{
+      const d=lastData?.find(x=>x.id===id);
+      const label=d?`${d.name} (${d.symbol.toUpperCase()})`:id;
+      return`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border)"><span style="font-size:13px">${label}</span><button onclick="removeCustomCoin('${id}')" style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--red-bg);border:0.5px solid var(--red);color:var(--red-text);cursor:pointer">${t('remove')}</button></div>`;
+    }).join('');
+    if(countEl)countEl.textContent=`${coins.length} / ${data.limit||25} ${t('coinsAdded')}`;
+  }catch(e){listEl.innerHTML=`<div style="font-size:12px;color:var(--red-text);text-align:center">${t('couldNotLoadCoins')}</div>`;}
+}
+
+async function addCustomCoin(){
+  const input=document.getElementById('customCoinInput');
+  const coinId=input.value.trim().toLowerCase();
+  if(!coinId)return;
+  const btn=document.getElementById('btnAddCustomCoin');
+  btn.disabled=true;btn.textContent='...';
+  try{
+    const result=await apiFetch('/api/user/coins',{method:'POST',body:JSON.stringify({coinId})});
+    currentUser.custom_coins=JSON.stringify(result.coins);
+    input.value='';
+    await fetchData();
+    await renderCustomCoinsSection();
+    showToast(`✅ ${result.name||coinId} ${t('addedCoin')}`,'green');
+  }catch(e){showToast(e.message||t('couldNotAddCoin'),'red');}
+  finally{btn.disabled=false;btn.textContent=t('addCoinBtn');}
+}
+
+async function removeCustomCoin(coinId){
+  try{
+    const result=await apiFetch('/api/user/coins/'+coinId,{method:'DELETE'});
+    currentUser.custom_coins=JSON.stringify(result.coins);
+    await fetchData();
+    await renderCustomCoinsSection();
+    showToast(t('coinRemoved'));
+  }catch(e){showToast(e.message||t('couldNotRemoveCoin'),'red');}
 }
 
 // ── FETCH DATA ───────────────────────────────────────────────
@@ -1442,6 +1530,7 @@ async function fetchData(){
   document.getElementById('errorBanner').style.display='none';
   try{
     const data=await apiFetch('/api/prices');
+    lastData=data; // set before updateWatchlist() so it sees this cycle's data, not the previous one
     updateWatchlist();
     const filtered=data.filter(d=>COINS.some(c=>c.id===d.id));
     renderCoins(filtered);
