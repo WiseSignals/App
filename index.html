@@ -264,8 +264,8 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
     </div>
     <div class="settings-section">
       <div class="settings-title" id="lTelegramTitle">Telegram Notifications</div>
-      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px" id="lTelegramDesc">Connect your Telegram to receive signal alerts and trade confirmations. Available in Phase 2.</div>
-      <div style="padding:10px;background:var(--bg-secondary);border-radius:var(--radius-md);font-size:12px;color:var(--text-tertiary);text-align:center" id="lTelegramStatus">⏳ Coming in Phase 2</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px" id="lTelegramDesc">Connect your Telegram to receive signal alerts and trade confirmations.</div>
+      <div id="telegramArea"></div>
     </div>
     <div class="settings-section">
       <div class="settings-title" id="lChangePwd">Change Password</div>
@@ -434,7 +434,7 @@ en:{
   apiKeys:'Kraken API Keys',apiKeyName:'Key name',
   noKrakenAccount:"Don't have a Kraken account yet?",krakenSignupBtn:'Create a Kraken account',
   apiGuide:'<b>How to get your API keys:</b><br>1. On Kraken, go to Settings → API<br>2. Click "Generate New Key"<br>3. Enable only <b>Query Funds</b> and <b>Trade</b> — never enable Withdraw<br>4. Copy the API Key and Private Key<br>5. Paste them below and save',
-  telegramTitle:'Telegram Notifications',telegramDesc:'Connect Telegram for signal alerts. Available in Phase 2.',
+  telegramTitle:'Telegram Notifications',telegramDesc:'Connect Telegram for signal alerts and trade confirmations.',
   changePwd:'Change Password',currentPwd:'Current password',newPwdProfile:'New password',
   btnChangePwd:'Update Password',btnLogout:'Sign Out',btnAddApiKey:'+ Add API Key',
   btnSaveKey:'Save Key',btnCancelKey:'Cancel',
@@ -495,7 +495,7 @@ fa:{
   apiKeys:'کلیدهای API کراکن',apiKeyName:'نام کلید',
   noKrakenAccount:'هنوز حساب کراکن ندارید؟',krakenSignupBtn:'ساخت حساب کراکن',
   apiGuide:'<b>چگونه کلیدهای API را دریافت کنیم:</b><br>۱. در کراکن به Settings → API بروید<br>۲. روی «Generate New Key» کلیک کنید<br>۳. فقط <b>Query Funds</b> و <b>Trade</b> را فعال کنید — هرگز Withdraw را فعال نکنید<br>۴. API Key و Private Key را کپی کنید<br>۵. آن‌ها را در پایین وارد و ذخیره کنید',
-  telegramTitle:'نوتیفیکیشن تلگرام',telegramDesc:'برای دریافت سیگنال‌ها تلگرام را متصل کنید. در فاز ۲ فعال می‌شود.',
+  telegramTitle:'نوتیفیکیشن تلگرام',telegramDesc:'برای دریافت سیگنال‌ها و تأیید معاملات، تلگرام را متصل کنید.',
   changePwd:'تغییر رمز عبور',currentPwd:'رمز عبور فعلی',newPwdProfile:'رمز عبور جدید',
   btnChangePwd:'بروزرسانی رمز عبور',btnLogout:'خروج',btnAddApiKey:'+ افزودن کلید API',
   btnSaveKey:'ذخیره کلید',btnCancelKey:'انصراف',
@@ -556,7 +556,7 @@ es:{
   apiKeys:'Claves API de Kraken',apiKeyName:'Nombre de clave',
   noKrakenAccount:'¿Aún no tienes una cuenta de Kraken?',krakenSignupBtn:'Crear una cuenta de Kraken',
   apiGuide:'<b>Cómo obtener tus claves API:</b><br>1. En Kraken, ve a Settings → API<br>2. Haz clic en "Generate New Key"<br>3. Activa solo <b>Query Funds</b> y <b>Trade</b> — nunca actives Withdraw<br>4. Copia la API Key y la Private Key<br>5. Pégalas abajo y guarda',
-  telegramTitle:'Notificaciones Telegram',telegramDesc:'Conecta Telegram para alertas de señales. Disponible en Fase 2.',
+  telegramTitle:'Notificaciones Telegram',telegramDesc:'Conecta Telegram para alertas de señales y confirmaciones de operaciones.',
   changePwd:'Cambiar contraseña',currentPwd:'Contraseña actual',newPwdProfile:'Nueva contraseña',
   btnChangePwd:'Actualizar contraseña',btnLogout:'Cerrar sesión',btnAddApiKey:'+ Agregar clave API',
   btnSaveKey:'Guardar clave',btnCancelKey:'Cancelar',
@@ -642,6 +642,65 @@ function renderProfile(){
   document.getElementById('profileExpiryVal').textContent=!user.expires_at?'Never':new Date(user.expires_at).toLocaleDateString('en-CA');
   document.getElementById('profileJoinedVal').textContent=user.created_at?new Date(user.created_at).toLocaleDateString('en-CA'):'—';
   renderApiKeys();
+  renderTelegramArea();
+}
+
+const PLAN_HIERARCHY={free:0,plus:1,pro:2,platinum:3};
+function renderTelegramArea(){
+  const el=document.getElementById('telegramArea');if(!el)return;
+  const plan=currentUser.plan||'free';
+  if(PLAN_HIERARCHY[plan]<PLAN_HIERARCHY.plus){
+    el.innerHTML=`<div style="padding:10px;background:var(--bg-secondary);border-radius:var(--radius-md);font-size:12px;color:var(--text-tertiary);text-align:center">🔒 Requires Plus plan or higher</div>`;
+    return;
+  }
+  if(currentUser.telegram_connected){
+    el.innerHTML=`<div style="padding:10px;background:var(--green-bg);border-radius:var(--radius-md);font-size:12px;color:var(--green-text);text-align:center;margin-bottom:8px">✅ Telegram connected</div>
+      <button onclick="disconnectTelegram()" style="width:100%;padding:9px;font-size:13px;border-radius:var(--radius-md);background:var(--red-bg);color:var(--red-text);border:0.5px solid var(--red);cursor:pointer">Disconnect</button>`;
+    return;
+  }
+  el.innerHTML=`<button onclick="startTelegramLink()" style="width:100%;padding:9px;font-size:13px;font-weight:500;border-radius:var(--radius-md);background:#2AA9E0;color:#fff;border:none;cursor:pointer" id="btnConnectTelegram">Connect Telegram</button>
+    <div id="telegramLinkStatus" style="font-size:11px;color:var(--text-tertiary);margin-top:8px;text-align:center"></div>`;
+}
+
+let telegramPollTimer=null;
+async function startTelegramLink(){
+  const btn=document.getElementById('btnConnectTelegram');
+  const statusEl=document.getElementById('telegramLinkStatus');
+  try{
+    btn.disabled=true;btn.textContent='Loading...';
+    const result=await apiFetch('/api/user/telegram/link-token',{method:'POST'});
+    window.open(result.link,'_blank');
+    btn.textContent='Waiting for confirmation...';
+    if(statusEl)statusEl.textContent=`Opened Telegram — tap Send on the /start message. Didn't open? Use this link: ${result.link}`;
+    if(telegramPollTimer)clearInterval(telegramPollTimer);
+    let attempts=0;
+    telegramPollTimer=setInterval(async()=>{
+      attempts++;
+      try{
+        const me=await apiFetch('/api/user/me');
+        currentUser=me;
+        if(me.telegram_connected){
+          clearInterval(telegramPollTimer);
+          renderTelegramArea();
+          showToast('✅ Telegram connected','green');
+        }
+      }catch(e){}
+      if(attempts>=40){clearInterval(telegramPollTimer);btn.disabled=false;btn.textContent='Connect Telegram';if(statusEl)statusEl.textContent='Link expired. Try again.';}
+    },5000);
+  }catch(e){
+    btn.disabled=false;btn.textContent='Connect Telegram';
+    showToast(e.message||'Could not start Telegram link','red');
+  }
+}
+
+async function disconnectTelegram(){
+  if(!confirm('Disconnect Telegram?'))return;
+  try{
+    await apiFetch('/api/user/telegram/disconnect',{method:'POST'});
+    currentUser.telegram_connected=0;
+    renderTelegramArea();
+    showToast('Telegram disconnected');
+  }catch(e){showToast(e.message||'Could not disconnect','red');}
 }
 
 async function renderApiKeys(){
