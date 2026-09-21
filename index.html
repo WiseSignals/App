@@ -273,6 +273,7 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
       <div class="settings-title" id="lTelegramTitle">Telegram Notifications</div>
       <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px" id="lTelegramDesc">Connect your Telegram to receive signal alerts and trade confirmations.</div>
       <div id="telegramArea"></div>
+      <div id="telegramNotifyPrefs" style="display:none;margin-top:10px"></div>
     </div>
     <div class="settings-section">
       <div class="settings-title" id="lChangePwd">Change Password</div>
@@ -721,10 +722,29 @@ function renderTelegramArea(){
   if(currentUser.telegram_connected){
     el.innerHTML=`<div style="padding:10px;background:var(--green-bg);border-radius:var(--radius-md);font-size:12px;color:var(--green-text);text-align:center;margin-bottom:8px">✅ Telegram connected</div>
       <button onclick="disconnectTelegram()" style="width:100%;padding:9px;font-size:13px;border-radius:var(--radius-md);background:var(--red-bg);color:var(--red-text);border:0.5px solid var(--red);cursor:pointer">Disconnect</button>`;
+    renderTelegramNotifyPrefs();
     return;
   }
   el.innerHTML=`<button onclick="startTelegramLink()" style="width:100%;padding:9px;font-size:13px;font-weight:500;border-radius:var(--radius-md);background:#2AA9E0;color:#fff;border:none;cursor:pointer" id="btnConnectTelegram">Connect Telegram</button>
     <div id="telegramLinkStatus" style="font-size:11px;color:var(--text-tertiary);margin-top:8px;text-align:center"></div>`;
+  renderTelegramNotifyPrefs();
+}
+
+const NOTIFY_PREF_KEYS=[
+  {key:'notifyStrongBuy',label:'Strong Buy signals'},
+  {key:'notifyStrongSell',label:'Strong Sell signals'},
+  {key:'notifyBuy',label:'Moderate Buy signals'},
+  {key:'notifySell',label:'Moderate Sell signals'},
+  {key:'notifyPasswordChange',label:'Password changes'},
+  {key:'notifyExpiry',label:'Account expiry warning'}
+];
+function renderTelegramNotifyPrefs(){
+  const el=document.getElementById('telegramNotifyPrefs');if(!el)return;
+  if(!currentUser.telegram_connected){el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML=`<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:6px">Notify me about:</div>`+
+    NOTIFY_PREF_KEYS.map(p=>`<div class="setting-row" style="padding:6px 0"><span class="setting-label" style="font-size:12px">${p.label}</span><input type="checkbox" id="np-${p.key}" ${appSettings[p.key]!==false?'checked':''} onchange="saveSetting('${p.key}',this.checked)" style="width:16px;height:16px;cursor:pointer"></div>`).join('')+
+    `<div style="font-size:10px;color:var(--text-tertiary);margin-top:4px">Signal alerts only fire for coins you currently hold (paper or real).</div>`;
 }
 
 let telegramPollTimer=null;
@@ -832,13 +852,18 @@ async function changePassword(){
 
 // appSettings is loaded from the backend at init (see loadAppSettings) and
 // only ever mutated by saveSetting(), which persists each change immediately.
-const BLOB_SETTING_KEYS=['sensitivity','minChange','tradeSize','customDefault','lang'];
+const BLOB_SETTING_KEYS=['sensitivity','minChange','tradeSize','customDefault','lang','notifyBuy','notifySell','notifyStrongBuy','notifyStrongSell','notifyPasswordChange','notifyExpiry'];
 function loadAppSettings(){
   let blob={};
   try{blob=JSON.parse(currentUser.settings||'{}');}catch(e){}
   appSettings={
     sensitivity:blob.sensitivity||'moderate',minChange:blob.minChange||'1',
     tradeSize:blob.tradeSize||'25',customDefault:blob.customDefault||'',lang:blob.lang||'en',
+    // Notification toggles default ON (undefined !== false) so a newly-connected
+    // Telegram account gets alerts out of the box, matching what the connect flow promises.
+    notifyBuy:blob.notifyBuy!==false,notifySell:blob.notifySell!==false,
+    notifyStrongBuy:blob.notifyStrongBuy!==false,notifyStrongSell:blob.notifyStrongSell!==false,
+    notifyPasswordChange:blob.notifyPasswordChange!==false,notifyExpiry:blob.notifyExpiry!==false,
     auto_trade_enabled:!!currentUser.auto_trade_enabled,
     auto_risk_pct:currentUser.auto_risk_pct||25,
     auto_delay_min:currentUser.auto_delay_min||5,
