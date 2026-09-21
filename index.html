@@ -427,7 +427,7 @@ async function loadUser(){
 const L={
 en:{
   signals:'Signals',portfolio:'Portfolio',history:'History',auto:'Auto',settings:'Settings',
-  refresh:'Refresh',loading:'Loading live prices...',updated:'Updated',
+  refresh:'Refresh',loading:'Loading live prices...',updated:'Updated',loadPricesError:'Could not load prices',
   buy:'Buy',sell:'Sell',hold:'Hold',autoQueued:'Auto queued',
   strongBuy:'Strong BUY',moderateBuy:'Moderate BUY',strongSell:'Strong SELL',moderateSell:'Moderate SELL',
   yourPosition:'Your position',entry:'Entry',now:'Now',invested:'Invested',pnl:'P&L',
@@ -493,7 +493,7 @@ en:{
 },
 fa:{
   signals:'سیگنال‌ها',portfolio:'پورتفولیو',history:'تاریخچه',auto:'اتوماتیک',settings:'تنظیمات',
-  refresh:'بروزرسانی',loading:'در حال بارگذاری قیمت‌ها...',updated:'بروز شد',
+  refresh:'بروزرسانی',loading:'در حال بارگذاری قیمت‌ها...',updated:'بروز شد',loadPricesError:'بارگذاری قیمت‌ها ممکن نشد',
   buy:'خرید',sell:'فروش',hold:'نگه‌دار',autoQueued:'در صف اتو',
   strongBuy:'خرید قوی',moderateBuy:'خرید متوسط',strongSell:'فروش قوی',moderateSell:'فروش متوسط',
   yourPosition:'موقعیت شما',entry:'ورود',now:'الان',invested:'سرمایه',pnl:'سود/زیان',
@@ -559,7 +559,7 @@ fa:{
 },
 es:{
   signals:'Señales',portfolio:'Portafolio',history:'Historial',auto:'Auto',settings:'Ajustes',
-  refresh:'Actualizar',loading:'Cargando precios...',updated:'Actualizado',
+  refresh:'Actualizar',loading:'Cargando precios...',updated:'Actualizado',loadPricesError:'No se pudieron cargar los precios',
   buy:'Comprar',sell:'Vender',hold:'Mantener',autoQueued:'Auto en cola',
   strongBuy:'Compra Fuerte',moderateBuy:'Compra Moderada',strongSell:'Venta Fuerte',moderateSell:'Venta Moderada',
   yourPosition:'Tu posición',entry:'Entrada',now:'Ahora',invested:'Invertido',pnl:'G/P',
@@ -1414,7 +1414,7 @@ function renderCoins(data){
       </div>
       <div id="msell-${coin.id}" style="display:none;background:var(--red-bg);border-radius:var(--radius-md);padding:10px;border:0.5px solid var(--red)">
         <div style="font-size:12px;color:var(--red-text);font-weight:500;margin-bottom:6px">${t('mSell')} ${coin.name}</div>
-        ${hasPos?`<div style="font-size:11px;color:var(--red-text);margin-bottom:8px">${posData.units.toFixed(6)} ${coin.symbol} · ${curSym()}${posVal.toFixed(2)} · ${t('pnl')}: <strong>${posPnl>=0?'+':''}${curSym()}${posPnl.toFixed(2)}</strong></div>
+        ${hasPos?`<div style="font-size:11px;color:var(--red-text);margin-bottom:8px">${posData.units.toFixed(6)} ${coin.symbol} · ${curSym()}${posVal.toFixed(2)}${posPnl!==null?` · ${t('pnl')}: <strong>${posPnl>=0?'+':''}${curSym()}${posPnl.toFixed(2)}</strong>`:''}</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
           ${[25,50,75].map(p=>`<div onclick="event.stopPropagation();setManualSellPct('msa-${coin.id}',${p})" style="padding:4px 8px;font-size:11px;border-radius:var(--radius-md);background:var(--bg-primary);border:0.5px solid var(--red);color:var(--red-text);cursor:pointer">${p}%</div>`).join('')}
           <div onclick="event.stopPropagation();setManualSellPct('msa-${coin.id}',100)" style="padding:4px 8px;font-size:11px;border-radius:var(--radius-md);background:var(--bg-primary);border:0.5px solid var(--red);color:var(--red-text);cursor:pointer">100%</div>
@@ -1730,7 +1730,8 @@ async function fetchData(){
     document.getElementById('lastUpdate').textContent=`${t('updated')} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
     document.getElementById('timerFill').style.width='100%';countdown=300;
   }catch(e){
-    const eb=document.getElementById('errorBanner');eb.style.display='block';eb.textContent=`⚠️ ${t('loading')}`;
+    console.error('fetchData failed:',e);
+    const eb=document.getElementById('errorBanner');eb.style.display='block';eb.textContent=`⚠️ ${t('loadPricesError')}${e.message?': '+e.message:''}`;
   }
 }
 function startTimer(){
