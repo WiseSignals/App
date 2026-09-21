@@ -1124,7 +1124,11 @@ async function realBuy(coinId){
   try{
     await apiFetch('/api/real/buy',{method:'POST',body:JSON.stringify({coinId,coinSymbol:coin?.symbol||coinId.toUpperCase(),amount})});
     showToast(`Real limit buy order placed for ${coin?.symbol||coinId} — check Portfolio → Real for status`,'green');
-    await refreshRealOrders();if(tradingMode==='real')renderRealPortfolioView();
+    // Orders are limit orders that fill asynchronously (see realOrderEngine's
+    // polling cron), so the position may not show as held immediately — this
+    // just catches the case of a fast/marketable fill.
+    await Promise.all([refreshRealOrders(),refreshRealPortfolio()]);
+    if(tradingMode==='real'){renderRealPortfolioView();renderCoins(lastData);}
   }catch(e){showToast(e.message||'Order failed','red');}
 }
 async function realSell(coinId){
@@ -1133,7 +1137,8 @@ async function realSell(coinId){
   try{
     await apiFetch('/api/real/sell',{method:'POST',body:JSON.stringify({coinId,coinSymbol:coin?.symbol||coinId.toUpperCase(),pct:100})});
     showToast(`Real limit sell order placed for ${coin?.symbol||coinId} — check Portfolio → Real for status`,'green');
-    await refreshRealOrders();if(tradingMode==='real')renderRealPortfolioView();
+    await Promise.all([refreshRealOrders(),refreshRealPortfolio()]);
+    if(tradingMode==='real'){renderRealPortfolioView();renderCoins(lastData);}
   }catch(e){showToast(e.message||'Order failed','red');}
 }
 
@@ -1257,12 +1262,20 @@ function switchChartTab(coinId,days,canvasId){
 }
 
 // ── RENDER COINS ─────────────────────────────────────────────
+// Unifies "does the user hold this coin" across paper positions and real
+// Kraken holdings, so the Signals list highlights/sorts correctly in either
+// mode. Real positions have no cost basis (Kraken doesn't track entry price),
+// so callers must not assume entry_price/entry_amount exist on the result.
+function getHeldPosition(coinId){
+  if(tradingMode==='real')return(realPortfolio.positions||[]).find(p=>p.coinId===coinId)||null;
+  return portfolioPositions[coinId]||null;
+}
 function renderCoins(data){
   lastData=data;if(!data||!data.length)return;
   updateAutoNotice();
   const list=document.getElementById('coinList');if(!list)return;
   const sorted=[...COINS].sort((a,b)=>{
-    const ah=!!portfolioPositions[a.id],bh=!!portfolioPositions[b.id];if(ah&&!bh)return -1;if(!ah&&bh)return 1;
+    const ah=!!getHeldPosition(a.id),bh=!!getHeldPosition(b.id);if(ah&&!bh)return -1;if(!ah&&bh)return 1;
     const da=data.find(d=>d.id===a.id),db=data.find(d=>d.id===b.id);if(!da||!db)return 0;
     const sa=analyze(da.current_price,da.price_change_percentage_24h,da.high_24h,da.low_24h);
     const sb=analyze(db.current_price,db.price_change_percentage_24h,db.high_24h,db.low_24h);
@@ -1274,7 +1287,8 @@ function renderCoins(data){
     currentPrices[coin.id]=cv(d.current_price);
     const sig=analyze(d.current_price,d.price_change_percentage_24h,d.high_24h,d.low_24h);
     const filtered=passesFilter(sig,d.price_change_percentage_24h);
-    const hasPos=!!portfolioPositions[coin.id];
+    const isRealMode=tradingMode==='real';
+    const hasPos=!!getHeldPosition(coin.id);
     const isAutoQueued=autoQueue.some(q=>q.coin_id===coin.id);
     const cc=d.price_change_percentage_24h>=0?'pos':'neg';
     const dsc=filtered?(sig.signal==='BUY'?'signal-buy':sig.signal==='SELL'?'signal-sell':'signal-hold'):'signal-hold';
@@ -1282,11 +1296,12 @@ function renderCoins(data){
     const dsig=filtered?`${sig.strength?sig.strength+' ':''}${sig.signal}`:t('hold').toUpperCase();
     const dispPrice=cv(d.current_price);
     const price=dispPrice>=1000?dispPrice.toLocaleString('en-US',{maximumFractionDigits:0}):dispPrice>=1?dispPrice.toFixed(2):dispPrice.toFixed(4);
-    const posData=hasPos?portfolioPositions[coin.id]:null;
+    const posData=hasPos?getHeldPosition(coin.id):null;
     const posVal=hasPos?posData.units*cv(d.current_price):0;
-    const posPnl=hasPos?posVal-posData.entry_amount:0;
+    // Real Kraken positions have no cost basis, so P&L isn't computable — null signals "not tracked" rather than 0.
+    const posPnl=hasPos&&!isRealMode?posVal-posData.entry_amount:null;
     let livePnl='';
-    if(hasPos){livePnl=`<div class="live-pnl${posPnl<0?' neg':''}">${posPnl>=0?'+':''}${curSym()}${posPnl.toFixed(2)}</div>`;}
+    if(hasPos&&posPnl!==null){livePnl=`<div class="live-pnl${posPnl<0?' neg':''}">${posPnl>=0?'+':''}${curSym()}${posPnl.toFixed(2)}</div>`;}
     const defAmt=selectedAmounts[coin.id]||getDefaultAmount(portfolioBalance);
     if(filtered&&sig.signal==='BUY'&&!hasPos&&!selectedAmounts[coin.id])selectedAmounts[coin.id]=defAmt;
     const rotateCandidates=Object.keys(portfolioPositions).filter(id=>id!==coin.id).map(fromId=>{
@@ -1333,11 +1348,12 @@ function renderCoins(data){
           <button class="btn btn-skip" onclick="event.stopPropagation();skipTrade('${coin.id}')">${t('skip')}</button>
         </div>`;
     }else if(filtered&&sig.signal==='SELL'&&hasPos){
-      const pnlV=posPnl;
-      tradeBtns=`<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;padding:8px;background:var(--bg-secondary);border-radius:var(--radius-md)">
-        <div style="display:flex;justify-content:space-between"><span>${t('entry')}</span><span>${curSym()}${posData.entry_price.toFixed(2)}</span></div>
+      const pnlRow=posPnl!==null?`<div style="display:flex;justify-content:space-between"><span>${t('entry')}</span><span>${curSym()}${posData.entry_price.toFixed(2)}</span></div>
         <div style="display:flex;justify-content:space-between;margin-top:3px"><span>${t('now')}</span><span>${curSym()}${posVal.toFixed(2)}</span></div>
-        <div style="display:flex;justify-content:space-between;margin-top:3px;font-weight:500"><span>${t('pnl')}</span><span class="${pnlV>=0?'pos':'neg'}">${pnlV>=0?'+':''}${curSym()}${pnlV.toFixed(2)}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px;font-weight:500"><span>${t('pnl')}</span><span class="${posPnl>=0?'pos':'neg'}">${posPnl>=0?'+':''}${curSym()}${posPnl.toFixed(2)}</span></div>`
+        :`<div style="display:flex;justify-content:space-between"><span>${posData.units.toFixed(6)} ${coin.symbol}</span><span>${curSym()}${posVal.toFixed(2)}</span></div>`;
+      tradeBtns=`<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;padding:8px;background:var(--bg-secondary);border-radius:var(--radius-md)">
+        ${pnlRow}
       </div>
       <div class="trade-btns">
         <button class="btn btn-sell" onclick="event.stopPropagation();(tradingMode==='real'?realSell:acceptSell)('${coin.id}')">${tradingMode==='real'?'⚡ Real sell':t('acceptSell')}</button>
@@ -1399,14 +1415,20 @@ function renderCoins(data){
         </div>
       </div>
       <div class="detail-panel" id="dp-${coin.id}">
-        ${hasPos?`<div style="background:var(--green-bg);border-radius:var(--radius-md);padding:8px 10px;margin-bottom:8px;border:0.5px solid var(--green)">
+        ${hasPos?(posPnl!==null?`<div style="background:var(--green-bg);border-radius:var(--radius-md);padding:8px 10px;margin-bottom:8px;border:0.5px solid var(--green)">
           <div style="display:flex;justify-content:space-between;align-items:baseline">
             <span style="font-size:12px;font-weight:600;color:var(--green-text)">${t('yourPosition')}</span>
             <span style="font-size:15px;font-weight:700;color:var(--green-text)">${curSym()}${posVal.toFixed(2)} <span style="font-size:12px">(${posPnl>=0?'+':''}${(posPnl/posData.entry_amount*100).toFixed(2)}%)</span></span>
           </div>
           <div style="font-size:11px;color:var(--green-text);margin-top:3px">${posData.units.toFixed(6)} ${coin.symbol} · ${t('entry')} ${curSym()}${posData.entry_price.toFixed(2)} · ${t('pnl')} <strong>${posPnl>=0?'+':''}${curSym()}${posPnl.toFixed(2)}</strong></div>
           <div style="font-size:11px;color:var(--green-text);margin-top:1px">${t('invested')} ${curSym()}${posData.entry_amount.toFixed(2)} · ${t('now')} ${curSym()}${dispPrice>=1?dispPrice.toFixed(2):dispPrice.toFixed(4)}</div>
-        </div>`:''}
+        </div>`:`<div style="background:var(--green-bg);border-radius:var(--radius-md);padding:8px 10px;margin-bottom:8px;border:0.5px solid var(--green)">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span style="font-size:12px;font-weight:600;color:var(--green-text)">${t('yourPosition')} <span style="font-weight:400">(Kraken)</span></span>
+            <span style="font-size:15px;font-weight:700;color:var(--green-text)">${curSym()}${posVal.toFixed(2)}</span>
+          </div>
+          <div style="font-size:11px;color:var(--green-text);margin-top:3px">${posData.units.toFixed(6)} ${coin.symbol} · ${t('now')} ${curSym()}${dispPrice>=1?dispPrice.toFixed(2):dispPrice.toFixed(4)}</div>
+        </div>`):''}
         <div class="detail-row"><span class="detail-label">${t('rsi')}</span><span class="detail-value" id="rsi-${coin.id}">${sig.rsi}</span></div>
         <div class="detail-row"><span class="detail-label">${t('ma7')}</span><span class="detail-value" id="ma7-${coin.id}">—</span></div>
         <div class="detail-row"><span class="detail-label">${t('ma25')}</span><span class="detail-value" id="ma25-${coin.id}">—</span></div>
@@ -1673,6 +1695,7 @@ async function removeCustomCoin(coinId){
 async function fetchData(){
   document.getElementById('errorBanner').style.display='none';
   try{
+    if(tradingMode==='real'){await refreshRealPortfolio();if(document.getElementById('tab-portfolio')?.classList.contains('active'))renderRealPortfolioView();}
     const data=await apiFetch('/api/prices');
     lastData=data; // set before updateWatchlist() so it sees this cycle's data, not the previous one
     updateWatchlist();
