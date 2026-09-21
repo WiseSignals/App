@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1D9E75">
-<title>Kraken Signals</title>
+<title>WiseSignals</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -140,7 +140,7 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
 <body>
 <div class="app">
   <div class="header">
-    <div><div class="title">Kraken Signals</div><div class="subtitle" id="lastUpdate">...</div></div>
+    <div><div class="title">WiseSignals</div><div class="subtitle" id="lastUpdate">...</div></div>
     <button class="refresh-btn" onclick="fetchData()" id="refreshBtn"><i class="ti ti-refresh"></i> <span id="refreshTxt"></span></button>
   </div>
   <div class="timer-bar"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
@@ -402,13 +402,14 @@ en:{
   bestTrade:'Best trade',worstTrade:'Worst trade',avgPerTrade:'Avg per trade',feesPaid:'Fees paid',
   trades:'trades',wins:'wins',losses:'losses',noTradesPeriod:'No trades in this period.',
   autoOn:'Auto-trade is ON · Strong signals execute after',minDelay:'min',
-  autoTitle:'Auto-Trade',autoEnabled:'Auto-trade enabled',riskLevel:'Risk level (max 50%)',
+  autoTitle:'Auto-Trade',autoEnabled:'Auto-trade enabled',riskLevel:'Risk level (max {m}%)',
   delayBefore:'Delay before execute',autoDesc:'Uses up to {r}% of portfolio as shared budget. Only Strong signals. Waits {d} min. Multiple signals split budget equally.',
   queuedTrades:'Queued auto-trades',autoLog:'Auto-trade log',noQueue:'No auto-trades queued.\nEnable auto-trade and wait for a Strong signal.',noAutoLog:'No auto-trades executed yet.',
   excludeTitle:'Excluded from Auto-Trade',excludeDesc:'Toggle OFF any coin to skip it from auto-trading, even if it shows a Strong signal.',excluded:'Excluded',included:'Active',
   sigSens:'Signal Sensitivity',minStrength:'Min signal strength',minMove:'Min 24h move',
   defAmount:'Default Trade Amount',quickPreset:'Quick preset',custom:'Custom ($)',customAmt:'Amount ($)',
   watchlistTitle:'Watchlist (15 coins, daily)',watchlistDesc:'Updated daily based on volume, volatility and signal quality. Held coins are always kept.',
+  watchlistTitlePlatinum:'Watchlist ({n} coins: trending + yours)',
   customCoinsTitle:'My Coins (Platinum)',customCoinsDesc:'Add any CoinGecko coin ID to trade it here, in addition to the main watchlist.',
   customCoinsLocked:'Requires Platinum plan',noCustomCoins:'No custom coins added yet.',remove:'Remove',coinsAdded:'coins added',
   couldNotLoadCoins:'Could not load coins.',addCoinBtn:'Add',addedCoin:'added',couldNotAddCoin:'Could not add coin',
@@ -467,13 +468,14 @@ fa:{
   bestTrade:'بهترین معامله',worstTrade:'بدترین معامله',avgPerTrade:'میانگین هر معامله',feesPaid:'کارمزد پرداختی',
   trades:'معامله',wins:'برد',losses:'باخت',noTradesPeriod:'در این دوره معامله‌ای نبود.',
   autoOn:'اتوتریدر روشن است · سیگنال‌های قوی بعد از',minDelay:'دقیقه اجرا می‌شوند',
-  autoTitle:'معامله اتوماتیک',autoEnabled:'اتوتریدر فعال',riskLevel:'سطح ریسک (حداکثر ۵۰٪)',
+  autoTitle:'معامله اتوماتیک',autoEnabled:'اتوتریدر فعال',riskLevel:'سطح ریسک (حداکثر {m}٪)',
   delayBefore:'تأخیر قبل از اجرا',autoDesc:'حداکثر {r}٪ از پورتفولیو به عنوان بودجه مشترک. فقط سیگنال‌های قوی. {d} دقیقه تأخیر. چند سیگنال همزمان بودجه را تقسیم می‌کنند.',
   queuedTrades:'معاملات در صف',autoLog:'لاگ معاملات اتوماتیک',noQueue:'معامله‌ای در صف نیست.\nاتوتریدر را روشن کنید و منتظر سیگنال قوی باشید.',noAutoLog:'هنوز معامله اتوماتیکی اجرا نشده.',
   excludeTitle:'کوین‌های استثنا از اتوتریدر',excludeDesc:'هر کوینی که نمی‌خواهید اتوتریدر روی آن معامله کند را خاموش کنید.',excluded:'استثنا',included:'فعال',
   sigSens:'حساسیت سیگنال',minStrength:'حداقل قدرت سیگنال',minMove:'حداقل تغییر ۲۴ ساعته',
   defAmount:'مقدار پیش‌فرض معامله',quickPreset:'پیش‌تنظیم سریع',custom:'دلخواه ($)',customAmt:'مقدار ($)',
   watchlistTitle:'واچ‌لیست (۱۵ کوین، بروزرسانی روزانه)',watchlistDesc:'روزانه بر اساس حجم، نوسان و کیفیت سیگنال بروز می‌شود. کوین‌هایی که دارید همیشه نگه داشته می‌شوند.',
+  watchlistTitlePlatinum:'واچ‌لیست ({n} کوین: پرطرفدار + کوین‌های شما)',
   customCoinsTitle:'کوین‌های من (پلاتینیوم)',customCoinsDesc:'هر شناسه کوین از CoinGecko را اضافه کنید تا علاوه بر واچ‌لیست اصلی، آن را هم معامله کنید.',
   customCoinsLocked:'نیازمند پلن پلاتینیوم',noCustomCoins:'هنوز کوین سفارشی اضافه نشده.',remove:'حذف',coinsAdded:'کوین اضافه شده',
   couldNotLoadCoins:'بارگذاری کوین‌ها ممکن نشد.',addCoinBtn:'افزودن',addedCoin:'اضافه شد',couldNotAddCoin:'افزودن کوین ممکن نشد',
@@ -532,13 +534,14 @@ es:{
   bestTrade:'Mejor operación',worstTrade:'Peor operación',avgPerTrade:'Promedio/operación',feesPaid:'Comisiones',
   trades:'operaciones',wins:'victorias',losses:'pérdidas',noTradesPeriod:'Sin operaciones en este período.',
   autoOn:'Auto-trade ACTIVO · Señales fuertes ejecutarán en',minDelay:'min',
-  autoTitle:'Operación Automática',autoEnabled:'Auto-trade activado',riskLevel:'Nivel de riesgo (máx 50%)',
+  autoTitle:'Operación Automática',autoEnabled:'Auto-trade activado',riskLevel:'Nivel de riesgo (máx {m}%)',
   delayBefore:'Retraso antes de ejecutar',autoDesc:'Usa hasta {r}% del portafolio como presupuesto compartido. Solo señales Fuertes. Espera {d} min. Múltiples señales dividen el presupuesto.',
   queuedTrades:'Auto-trades en cola',autoLog:'Registro auto-trade',noQueue:'Sin auto-trades en cola.\nActiva auto-trade y espera una señal Fuerte.',noAutoLog:'Sin auto-trades ejecutados.',
   excludeTitle:'Excluidos del Auto-Trade',excludeDesc:'Desactiva cualquier moneda para que el auto-trade la omita, incluso con señal Fuerte.',excluded:'Excluido',included:'Activo',
   sigSens:'Sensibilidad de señal',minStrength:'Fuerza mínima',minMove:'Movimiento mín 24h',
   defAmount:'Monto predeterminado',quickPreset:'Preajuste rápido',custom:'Personalizado ($)',customAmt:'Monto ($)',
   watchlistTitle:'Lista de seguimiento (15 monedas)',watchlistDesc:'Actualizada diariamente por volumen, volatilidad y calidad de señal. Las monedas que tienes siempre se mantienen.',
+  watchlistTitlePlatinum:'Lista de seguimiento ({n} monedas: tendencia + tuyas)',
   customCoinsTitle:'Mis monedas (Platinum)',customCoinsDesc:'Agrega cualquier ID de moneda de CoinGecko para operarla aquí, además de la lista principal.',
   customCoinsLocked:'Requiere plan Platinum',noCustomCoins:'Aún no has agregado monedas personalizadas.',remove:'Eliminar',coinsAdded:'monedas agregadas',
   couldNotLoadCoins:'No se pudieron cargar las monedas.',addCoinBtn:'Agregar',addedCoin:'agregada',couldNotAddCoin:'No se pudo agregar la moneda',
@@ -615,12 +618,16 @@ function applyLanguage(){
   Object.entries(ptm).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   const lct=document.getElementById('lClosedTrades');if(lct)lct.textContent=t('closedTrades');
   // Auto tab
-  const am={lAutoTitle:'autoTitle',lAutoEnabled:'autoEnabled',lRiskLevel:'riskLevel',lDelay:'delayBefore',lQueuedTrades:'queuedTrades',lAutoLog:'autoLog',lExcludeTitle:'excludeTitle'};
+  const am={lAutoTitle:'autoTitle',lAutoEnabled:'autoEnabled',lDelay:'delayBefore',lQueuedTrades:'queuedTrades',lAutoLog:'autoLog',lExcludeTitle:'excludeTitle'};
   Object.entries(am).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
+  const maxRisk=currentUser?.plan==='platinum'?100:50;
+  const lrl=document.getElementById('lRiskLevel');if(lrl)lrl.textContent=t('riskLevel').replace('{m}',maxRisk);
+  const riskSlider=document.getElementById('autoRisk');
+  if(riskSlider){riskSlider.max=maxRisk;if(parseInt(riskSlider.value)>maxRisk)riskSlider.value=maxRisk;}
   const r=appSettings.auto_risk_pct||25,d=appSettings.auto_delay_min||5;
   const adesc=document.getElementById('autoDesc');if(adesc)adesc.innerHTML=t('autoDesc').replace('{r}',r).replace('{d}',d);
   // Settings labels
-  const sm={lSigSens:'sigSens',lMinStrength:'minStrength',lMinMove:'minMove',lDefAmount:'defAmount',lQuickPreset:'quickPreset',lCustomAmt:'customAmt',lWatchlistTitle:'watchlistTitle',lWatchlistDesc:'watchlistDesc',lCustomCoinsTitle:'customCoinsTitle',lCustomCoinsDesc:'customCoinsDesc'};
+  const sm={lSigSens:'sigSens',lMinStrength:'minStrength',lMinMove:'minMove',lDefAmount:'defAmount',lQuickPreset:'quickPreset',lCustomAmt:'customAmt',lWatchlistDesc:'watchlistDesc',lCustomCoinsTitle:'customCoinsTitle',lCustomCoinsDesc:'customCoinsDesc'};
   Object.entries(sm).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   const oc=document.getElementById('oCustom');if(oc)oc.textContent=t('custom');
   const oa=document.getElementById('oAll');if(oa)oa.textContent=t('allSignals');
@@ -844,20 +851,16 @@ function updateRiskDisplay(v){
 // user (the base watchlist, or base + a Platinum user's own custom coins),
 // so the coin list is just whatever came back — no client-side scoring needed.
 function updateWatchlist(){
+  // The backend already returns exactly this user's coin set (base 15, or a
+  // Platinum user's custom+trending 25) — just build display entries from
+  // whatever came back, using curated styling for the base coins and
+  // generic styling for anything else (custom picks or trending coins).
   if(lastData&&lastData.length>0){
-    const baseCoins=BASE_COINS.filter(c=>lastData.some(d=>d.id===c.id));
-    let customCoins=[];
-    if(currentUser?.plan==='platinum'){
-      try{
-        const customIds=JSON.parse(currentUser.custom_coins||'[]');
-        customCoins=customIds.map(id=>{
-          const d=lastData.find(x=>x.id===id);
-          if(!d)return null;
-          return{id:d.id,symbol:d.symbol.toUpperCase(),name:d.name,bg:'#EEEDFE',tc:'#3C3489'};
-        }).filter(Boolean);
-      }catch(e){}
-    }
-    COINS=[...baseCoins,...customCoins];
+    COINS=lastData.map(d=>{
+      const base=BASE_COINS.find(c=>c.id===d.id);
+      if(base)return base;
+      return{id:d.id,symbol:(d.symbol||d.id).toUpperCase(),name:d.name||d.id,bg:'#EEEDFE',tc:'#3C3489'};
+    });
     if(COINS.length<8)COINS=BASE_COINS.slice(0,15);
   }
   renderWatchlistDisplay();
@@ -865,6 +868,8 @@ function updateWatchlist(){
 function renderWatchlistDisplay(){
   const el=document.getElementById('watchlistDisplay');
   if(el)el.innerHTML=COINS.map(c=>`<span style="display:inline-block;margin:2px 4px;padding:2px 8px;background:var(--bg-secondary);border-radius:var(--radius-md);font-size:12px">${c.symbol}</span>`).join('');
+  const titleEl=document.getElementById('lWatchlistTitle');
+  if(titleEl)titleEl.textContent=currentUser?.plan==='platinum'?t('watchlistTitlePlatinum').replace('{n}',COINS.length):t('watchlistTitle');
 }
 
 // ── AUTO NOTICE ──────────────────────────────────────────────
