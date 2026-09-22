@@ -1196,6 +1196,16 @@ async function refreshRealPortfolio(){
 async function refreshRealOrders(){
   try{realOrders=await apiFetch('/api/real/orders');}catch(e){realOrders=[];}
 }
+async function cancelRealOrder(orderId){
+  const o=(realOrders||[]).find(x=>x.id===orderId);
+  if(!confirm(`Cancel this real Kraken order?\n${o?`${o.side.toUpperCase()} ${o.coin_symbol}`:'This order'} will stop waiting to fill and any reserved cash frees up.`))return;
+  try{
+    await apiFetch(`/api/real/orders/${orderId}/cancel`,{method:'POST'});
+    showToast('Order canceled','green');
+    await Promise.all([refreshRealOrders(),refreshRealPortfolio()]);
+    renderRealPortfolioView();
+  }catch(e){showToast(e.message||'Cancel failed','red');}
+}
 function renderRealPortfolioView(){
   const el=document.getElementById('realPortfolioView');if(!el)return;
   if(realPortfolio.error){el.innerHTML=`<div style="padding:16px;text-align:center;color:var(--red-text);font-size:13px">${realPortfolio.error}</div>`;return;}
@@ -1214,7 +1224,8 @@ function renderRealPortfolioView(){
     // the order's own recorded quote_currency here, not curSym().
     const qcSym=CURRENCY_SYMBOLS[(o.quote_currency||'').toLowerCase()];
     const priceStr=qcSym?`${qcSym}${(o.limit_price||0).toFixed(2)}`:`${(o.limit_price||0).toFixed(2)} ${o.quote_currency||''}`;
-    return`<div class="trade-item"><div class="trade-header"><span class="trade-coin">${o.coin_symbol} <span style="font-size:11px;color:var(--text-tertiary)">${o.side.toUpperCase()}</span></span><span style="font-size:12px;font-weight:600;color:${statusColor}">${o.status}</span></div><div class="trade-meta">${priceStr} · ${(o.filled_volume||0).toFixed(6)}/${(o.volume||0).toFixed(6)} filled · ${date}</div></div>`;
+    const cancelBtn=o.status==='open'?`<button onclick="event.stopPropagation();cancelRealOrder('${o.id}')" style="margin-top:4px;padding:4px 10px;font-size:11px;border-radius:var(--radius-md);border:0.5px solid var(--red);background:var(--red-bg);color:var(--red-text);cursor:pointer">Cancel</button>`:'';
+    return`<div class="trade-item"><div class="trade-header"><span class="trade-coin">${o.coin_symbol} <span style="font-size:11px;color:var(--text-tertiary)">${o.side.toUpperCase()}</span></span><span style="font-size:12px;font-weight:600;color:${statusColor}">${o.status}</span></div><div class="trade-meta">${priceStr} · ${(o.filled_volume||0).toFixed(6)}/${(o.volume||0).toFixed(6)} filled · ${date}</div>${cancelBtn}</div>`;
   }).join('')||`<div class="empty-state">No Kraken orders yet.</div>`;
   el.innerHTML=`
     <div class="metric-grid">
