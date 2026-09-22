@@ -1409,7 +1409,10 @@ function renderChart(coinId,days,canvasId){
 }
 async function loadChart(coinId,days,canvasId){
   if(!chartData[coinId])chartData[coinId]={};
-  if(!chartData[coinId][days]){const p=await fetchChart(coinId,days);if(p)chartData[coinId][days]=p;}
+  if(!chartData[coinId][days]){
+    renderChart(coinId,days,canvasId); // shows the "loading" placeholder immediately instead of a stale/blank canvas while the fetch is in flight
+    const p=await fetchChart(coinId,days);if(p)chartData[coinId][days]=p;
+  }
   renderChart(coinId,days,canvasId);
 }
 function switchChartTab(coinId,days,canvasId){
