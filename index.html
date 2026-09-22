@@ -116,7 +116,7 @@ select,input[type=number]{font-size:13px;padding:5px 8px;border-radius:var(--rad
 .chart-tab{padding:4px 10px;font-size:11px;border-radius:var(--radius-md);cursor:pointer;border:0.5px solid var(--border);background:var(--bg-primary);color:var(--text-secondary)}
 .chart-tab.active{background:var(--green-bg);color:var(--green-text);border-color:var(--green);font-weight:500}
 canvas{width:100%!important;border-radius:var(--radius-md)}
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:var(--radius-lg);font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:var(--radius-lg);font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:pre-line;max-width:90vw;width:max-content;text-align:center;line-height:1.4}
 .toast.show{opacity:1}
 .toast.green{background:var(--green)}
 .toast.red{background:var(--red)}
@@ -688,10 +688,13 @@ function applyLanguage(){
 }
 
 // ── TOAST ────────────────────────────────────────────────────
-function showToast(msg,type='green',dur=3500){
+function showToast(msg,type='green',dur){
   const el=document.getElementById('toast');if(!el)return;
   if(toastTimer)clearTimeout(toastTimer);
   el.textContent=msg;el.className=`toast ${type} show`;
+  // Longer messages (e.g. detailed error explanations) get more time to read
+  // instead of a fixed 3.5s regardless of length.
+  if(dur==null)dur=Math.min(9000,Math.max(3500,msg.length*60));
   toastTimer=setTimeout(()=>el.classList.remove('show'),dur);
 }
 
@@ -1205,7 +1208,12 @@ function renderRealPortfolioView(){
   const ordersHtml=(realOrders||[]).slice(0,20).map(o=>{
     const date=new Date(o.created_at).toLocaleDateString('en-CA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
     const statusColor=o.status==='closed'?'var(--green-text)':o.status==='open'?'var(--blue-text)':'var(--text-tertiary)';
-    return`<div class="trade-item"><div class="trade-header"><span class="trade-coin">${o.coin_symbol} <span style="font-size:11px;color:var(--text-tertiary)">${o.side.toUpperCase()}</span></span><span style="font-size:12px;font-weight:600;color:${statusColor}">${o.status}</span></div><div class="trade-meta">${curSym()}${(o.limit_price||0).toFixed(2)} · ${(o.filled_volume||0).toFixed(6)}/${(o.volume||0).toFixed(6)} filled · ${date}</div></div>`;
+    // Kraken orders trade against whatever quote currency that coin's pair
+    // uses (often USD/USDT), which may not be the display currency — use
+    // the order's own recorded quote_currency here, not curSym().
+    const qcSym=CURRENCY_SYMBOLS[(o.quote_currency||'').toLowerCase()];
+    const priceStr=qcSym?`${qcSym}${(o.limit_price||0).toFixed(2)}`:`${(o.limit_price||0).toFixed(2)} ${o.quote_currency||''}`;
+    return`<div class="trade-item"><div class="trade-header"><span class="trade-coin">${o.coin_symbol} <span style="font-size:11px;color:var(--text-tertiary)">${o.side.toUpperCase()}</span></span><span style="font-size:12px;font-weight:600;color:${statusColor}">${o.status}</span></div><div class="trade-meta">${priceStr} · ${(o.filled_volume||0).toFixed(6)}/${(o.volume||0).toFixed(6)} filled · ${date}</div></div>`;
   }).join('')||`<div class="empty-state">No Kraken orders yet.</div>`;
   el.innerHTML=`
     <div class="metric-grid">
@@ -1217,16 +1225,35 @@ function renderRealPortfolioView(){
     <div class="section-label">Recent Kraken orders</div>
     <div>${ordersHtml}</div>`;
 }
+// Many coins only have a USD/USDT pair on Kraken regardless of the
+// account's chosen display currency — cached per coin symbol for the
+// session since a coin's available Kraken pairs don't change mid-session.
+const realPairCache={};
+async function getRealPairQuote(coinSymbol){
+  const key=(coinSymbol||'').toUpperCase();if(!key)return null;
+  if(realPairCache[key]!==undefined)return realPairCache[key];
+  try{const r=await apiFetch('/api/real/pair/'+encodeURIComponent(key));realPairCache[key]=r;return r;}
+  catch(e){realPairCache[key]=null;return null;}
+}
+function currencyMismatchNote(pairInfo){
+  if(!pairInfo)return'';
+  const displayCcy=(currentUser?.currency||'usd').toUpperCase();
+  const quote=pairInfo.quote;
+  const isStableEquivUsd=displayCcy==='USD'&&quote==='USDT';
+  if(quote===displayCcy||isStableEquivUsd)return'';
+  return`\n⚠️ This trades against ${quote} on Kraken, not your account currency (${displayCcy}) — funds move in ${quote}.`;
+}
 // amountOverride lets the manual-buy panel pass its own typed amount;
 // without it, uses the same chip/default amount the single Accept button uses.
 async function realBuy(coinId,amountOverride){
   const coin=COINS.find(c=>c.id===coinId);
   const amount=amountOverride!=null?amountOverride:(selectedAmounts[coinId]||getDefaultAmount(portfolioBalance));
   if(!(amount>0))return;
-  if(!confirm(`Place a real Kraken limit buy order?\n${coin?.name} · ${curSym()}${amount.toFixed(2)}\nThis places a limit order near the current price — it may take time to fill. Check Portfolio → Real for status.`))return;
+  const pairInfo=await getRealPairQuote(coin?.symbol||coinId);
+  if(!confirm(`Place a real Kraken limit buy order?\n${coin?.name} · ${curSym()}${amount.toFixed(2)}\nThis places a limit order near the current price — it may take time to fill. Check Portfolio → Real for status.${currencyMismatchNote(pairInfo)}`))return;
   try{
-    await apiFetch('/api/real/buy',{method:'POST',body:JSON.stringify({coinId,coinSymbol:coin?.symbol||coinId.toUpperCase(),amount})});
-    showToast(`Real limit buy order placed for ${coin?.symbol||coinId} — check Portfolio → Real for status`,'green');
+    const result=await apiFetch('/api/real/buy',{method:'POST',body:JSON.stringify({coinId,coinSymbol:coin?.symbol||coinId.toUpperCase(),amount})});
+    showToast(`Real limit buy order placed for ${coin?.symbol||coinId} (${result.pair||''}) — check Portfolio → Real for status`,'green');
     // Orders are limit orders that fill asynchronously (see realOrderEngine's
     // polling cron), so the position may not show as held immediately — this
     // just catches the case of a fast/marketable fill.
@@ -1240,10 +1267,11 @@ async function realSell(coinId,pctOverride){
   const coin=COINS.find(c=>c.id===coinId);
   const pct=pctOverride!=null?pctOverride:100;
   if(!(pct>0&&pct<=100))return;
-  if(!confirm(`Place a real Kraken limit sell order?\nSell ${pct}% of your ${coin?.symbol||coinId} balance on Kraken.\nThis places a limit order near the current price — it may take time to fill. Check Portfolio → Real for status.`))return;
+  const pairInfo=await getRealPairQuote(coin?.symbol||coinId);
+  if(!confirm(`Place a real Kraken limit sell order?\nSell ${pct}% of your ${coin?.symbol||coinId} balance on Kraken.\nThis places a limit order near the current price — it may take time to fill. Check Portfolio → Real for status.${currencyMismatchNote(pairInfo)}`))return;
   try{
-    await apiFetch('/api/real/sell',{method:'POST',body:JSON.stringify({coinId,coinSymbol:coin?.symbol||coinId.toUpperCase(),pct})});
-    showToast(`Real limit sell order placed for ${coin?.symbol||coinId} — check Portfolio → Real for status`,'green');
+    const result=await apiFetch('/api/real/sell',{method:'POST',body:JSON.stringify({coinId,coinSymbol:coin?.symbol||coinId.toUpperCase(),pct})});
+    showToast(`Real limit sell order placed for ${coin?.symbol||coinId} (${result.pair||''}) — proceeds land in ${pairInfo?.quote||'the pair\'s quote currency'} on Kraken — check Portfolio → Real for status`,'green');
     await Promise.all([refreshRealOrders(),refreshRealPortfolio()]);
     if(tradingMode==='real'){renderRealPortfolioView();renderCoins(lastData);}
   }catch(e){showToast(e.message||'Order failed','red');}
@@ -1258,10 +1286,11 @@ async function realRotateSell(fromId,toId,amount){
   const price=currentPrices[fromId];if(!price||!(amount>0))return;
   const p=realPortfolio.positions?.find(x=>x.coinId===fromId);
   const pct=p&&p.value>0?Math.min(100,(amount/p.value)*100):100;
-  if(!confirm(`Place a real Kraken limit sell order?\nSell ${curSym()}${amount.toFixed(2)} of ${fc?.name} (~${pct.toFixed(0)}%).\nThis is sell-only — buy ${tc?.symbol||''} yourself once it fills. Check Portfolio → Real for status.`))return;
+  const pairInfo=await getRealPairQuote(fc?.symbol||fromId);
+  if(!confirm(`Place a real Kraken limit sell order?\nSell ${curSym()}${amount.toFixed(2)} of ${fc?.name} (~${pct.toFixed(0)}%).\nThis is sell-only — buy ${tc?.symbol||''} yourself once it fills. Check Portfolio → Real for status.${currencyMismatchNote(pairInfo)}`))return;
   try{
-    await apiFetch('/api/real/sell',{method:'POST',body:JSON.stringify({coinId:fromId,coinSymbol:fc?.symbol||fromId.toUpperCase(),pct})});
-    showToast(`Real sell placed for ${fc?.symbol||fromId} — buy ${tc?.symbol||''} yourself once it fills`,'amber');
+    const result=await apiFetch('/api/real/sell',{method:'POST',body:JSON.stringify({coinId:fromId,coinSymbol:fc?.symbol||fromId.toUpperCase(),pct})});
+    showToast(`Real sell placed for ${fc?.symbol||fromId} (${result.pair||''}) — buy ${tc?.symbol||''} yourself once it fills`,'amber');
     await Promise.all([refreshRealOrders(),refreshRealPortfolio()]);
     if(tradingMode==='real'){renderRealPortfolioView();renderCoins(lastData);}
   }catch(e){showToast(e.message||'Order failed','red');}
@@ -1448,9 +1477,13 @@ function renderCoins(data){
     if(filtered&&sig.signal==='BUY'){
       const rotateBtns=rotateCandidates.map(r=>{
         const rid=`rot-${r.fromId}-${coin.id}`;
-        return`<div style="margin-top:8px;padding:8px;background:var(--amber-bg);border-radius:var(--radius-md);border:0.5px solid var(--amber)">
-          <div style="font-size:12px;font-weight:500;color:var(--amber-text);margin-bottom:5px"><i class="ti ti-arrows-exchange"></i> ${t('rotateFrom')} ${r.fromName}${isRealMode?' (real: sell only)':''}</div>
-          <div style="font-size:11px;color:var(--amber-text);margin-bottom:6px">${t('invested')}: ${curSym()}${r.exitVal.toFixed(2)}</div>
+        const panelId=`rotp-${r.fromId}-${coin.id}`;
+        return`<div style="margin-top:8px;border-radius:var(--radius-md);border:0.5px solid var(--amber);overflow:hidden">
+          <div onclick="event.stopPropagation();toggleManualPanel('${panelId}')" style="padding:8px;background:var(--amber-bg);cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:12px;font-weight:500;color:var(--amber-text)"><i class="ti ti-arrows-exchange"></i> ${t('rotateFrom')} ${r.fromName}${isRealMode?' (real: sell only)':''} · ${curSym()}${r.exitVal.toFixed(2)}</span>
+            <i class="ti ti-chevron-down" style="color:var(--amber-text)"></i>
+          </div>
+          <div id="${panelId}" style="display:none;padding:8px;background:var(--amber-bg);border-top:0.5px solid var(--amber)">
           <div style="font-size:11px;color:var(--amber-text);margin-bottom:6px;font-weight:500">${t('howMuchRotate')}</div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">
             ${[25,50,75].map(pct=>`<div onclick="event.stopPropagation();setRotateAmount('${rid}',${(r.exitVal*pct/100).toFixed(2)},'${r.fromId}','${coin.id}')" style="padding:4px 8px;font-size:11px;border-radius:var(--radius-md);background:var(--bg-primary);border:0.5px solid var(--amber);color:var(--amber-text);cursor:pointer">${pct}% · ${curSym()}${(r.exitVal*pct/100).toFixed(0)}</div>`).join('')}
@@ -1463,6 +1496,7 @@ function renderCoins(data){
           <div style="display:flex;gap:8px">
             <button class="btn btn-accept" style="background:var(--amber-bg);color:var(--amber-text);border-color:var(--amber);flex:2" onclick="event.stopPropagation();tradingMode==='real'?realRotateSell('${r.fromId}','${coin.id}',parseFloat(document.getElementById('${rid}').value)||0):acceptRotatePartial('${r.fromId}','${coin.id}','${rid}')"><i class="ti ti-arrows-exchange"></i> ${r.fromSymbol}→${coin.symbol}</button>
             <button class="btn btn-skip" style="flex:1" onclick="event.stopPropagation();skipTrade('${coin.id}')">${t('skip')}</button>
+          </div>
           </div>
         </div>`;}).join('');
       const suggs=getSmartSuggestions(portfolioBalance,sig.strength);
