@@ -1250,11 +1250,15 @@ async function realBuy(coinId,amountOverride){
   const coin=COINS.find(c=>c.id===coinId);
   const amount=amountOverride!=null?amountOverride:(selectedAmounts[coinId]||getDefaultAmount(portfolioBalance));
   if(!(amount>0))return;
-  const pairInfo=await getRealPairQuote(coin?.symbol||coinId);
-  if(!confirm(`Place a real Kraken limit buy order?\n${coin?.name} · ${curSym()}${amount.toFixed(2)}\nThis places a limit order near the current price — it may take time to fill. Check Portfolio → Real for status.${currencyMismatchNote(pairInfo)}`))return;
+  // Buys now auto-fund from whichever of CAD/USD/EUR has cash (splitting across
+  // them if needed — see krakenService.planBuySplit), so there's no single
+  // "this trades against a different currency" warning to show here anymore.
+  if(!confirm(`Place a real Kraken limit buy order?\n${coin?.name} · ${curSym()}${amount.toFixed(2)}\nThis places a limit order near the current price — it may take time to fill. Funded from CAD/USD/EUR cash, splitting across them if needed. Check Portfolio → Real for status.`))return;
   try{
     const result=await apiFetch('/api/real/buy',{method:'POST',body:JSON.stringify({coinId,coinSymbol:coin?.symbol||coinId.toUpperCase(),amount})});
-    showToast(`Real limit buy order placed for ${coin?.symbol||coinId} (${result.pair||''}) — check Portfolio → Real for status`,'green');
+    const orders=result.orders||[result];
+    const pairsLabel=orders.length>1?`split across ${orders.map(o=>o.pair).join(' + ')}`:(result.pair||'');
+    showToast(`Real limit buy order placed for ${coin?.symbol||coinId} (${pairsLabel}) — check Portfolio → Real for status`,'green');
     // Orders are limit orders that fill asynchronously (see realOrderEngine's
     // polling cron), so the position may not show as held immediately — this
     // just catches the case of a fast/marketable fill.
