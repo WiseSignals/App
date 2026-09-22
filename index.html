@@ -308,8 +308,6 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
           <option value="usd">USD $</option>
           <option value="cad">CAD $</option>
           <option value="eur">EUR €</option>
-          <option value="gbp">GBP £</option>
-          <option value="aud">AUD $</option>
         </select>
       </div>
     </div>
@@ -394,7 +392,7 @@ let portfolioBalance=100,portfolioPositions={},tradesHistory=[],autoQueue=[];
 // stay consistent with the already-converted amounts instead of silently
 // mixing units once a non-USD currency is selected.
 let fxRate=1;
-const CURRENCY_SYMBOLS={usd:'$',cad:'CA$',eur:'€',gbp:'£',aud:'A$'};
+const CURRENCY_SYMBOLS={usd:'$',cad:'CA$',eur:'€'};
 function curSym(){return CURRENCY_SYMBOLS[currentUser?.currency||'usd']||'$';}
 function cv(usdValue){return usdValue*fxRate;}
 async function refreshFxRate(){
