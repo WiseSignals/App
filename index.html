@@ -377,7 +377,7 @@ const BASE_COINS=[
   {id:'filecoin',symbol:'FIL',name:'Filecoin',bg:'#E6F1FB',tc:'#0C447C'}
 ];
 let COINS=[...BASE_COINS];
-let openCard=null,countdown=300,timerInterval=null,currentPrices={},lastData=[],selectedAmounts={};
+let openCard=null,countdown=180,timerInterval=null,currentPrices={},lastData=[],selectedAmounts={};
 let chartData={},activeChartTab={},toastTimer=null,historicalCache={};
 
 // ── API ──────────────────────────────────────────────────────
@@ -1921,15 +1921,15 @@ async function fetchData(){
     renderCoins(filtered);
     const now=new Date();
     document.getElementById('lastUpdate').textContent=`${t('updated')} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
-    document.getElementById('timerFill').style.width='100%';countdown=300;
+    document.getElementById('timerFill').style.width='100%';countdown=180;
   }catch(e){
     console.error('fetchData failed:',e);
     const eb=document.getElementById('errorBanner');eb.style.display='block';eb.textContent=`⚠️ ${t('loadPricesError')}${e.message?': '+e.message:''}`;
   }
 }
 function startTimer(){
-  if(timerInterval)clearInterval(timerInterval);countdown=300;
-  timerInterval=setInterval(()=>{countdown--;document.getElementById('timerFill').style.width=((countdown/300)*100)+'%';if(countdown<=0){clearInterval(timerInterval);fetchData().then(startTimer);}},1000);
+  if(timerInterval)clearInterval(timerInterval);countdown=180;
+  timerInterval=setInterval(()=>{countdown--;document.getElementById('timerFill').style.width=((countdown/180)*100)+'%';if(countdown<=0){clearInterval(timerInterval);fetchData().then(startTimer);}},1000);
 }
 
 // ── TERMS / RISK DISCLOSURE GATE ─────────────────────────────
