@@ -1045,11 +1045,16 @@ async function analyzeReal(coinId,price,change,high,low){
   if(volRatio!==null&&volRatio>1.5){bs+=bs>0?1:0;ss+=ss>0?1:0;}
   const rStr=rsi!==null?rsi.toFixed(0):'~'+Math.round(rv);
   const m7s=ma7!==null?curSym()+ma7.toFixed(2):'—',m25s=ma25!==null?curSym()+ma25.toFixed(2):'—';
+  // bs and ss are independent scores — a short-term dip can score buy points
+  // while a longer-term overbought RSI simultaneously scores sell points on
+  // the same coin. Comparing bs to its own threshold before ever looking at
+  // ss let any buy score, however weak, silently beat an even stronger sell
+  // score. Only the dominant side can signal, and only if it clears Moderate.
   let signal,strength,reason;
-  if(bs>=4){signal='BUY';strength='Strong';reason=`RSI ${rStr} (${t('oversold')}). ${t('bounce')}. MA7:${m7s} MA25:${m25s} · ${trend}${volStr?' · '+volStr:''}.`}
-  else if(bs>=2){signal='BUY';strength='Moderate';reason=`RSI ${rStr} (${t('weakness')}). ${t('accumulation')}. MA7:${m7s} · ${trend}${volStr?' · '+volStr:''}.`}
-  else if(ss>=4){signal='SELL';strength='Strong';reason=`RSI ${rStr} (${t('overbought')}). ${t('takeProfit')}. MA7:${m7s} MA25:${m25s} · ${trend}${volStr?' · '+volStr:''}.`}
-  else if(ss>=2){signal='SELL';strength='Moderate';reason=`RSI ${rStr} (${t('slowing')}). ${t('reversal')}. MA7:${m7s} · ${trend}${volStr?' · '+volStr:''}.`}
+  if(bs>ss&&bs>=4){signal='BUY';strength='Strong';reason=`RSI ${rStr} (${t('oversold')}). ${t('bounce')}. MA7:${m7s} MA25:${m25s} · ${trend}${volStr?' · '+volStr:''}.`}
+  else if(bs>ss&&bs>=2){signal='BUY';strength='Moderate';reason=`RSI ${rStr} (${t('weakness')}). ${t('accumulation')}. MA7:${m7s} · ${trend}${volStr?' · '+volStr:''}.`}
+  else if(ss>bs&&ss>=4){signal='SELL';strength='Strong';reason=`RSI ${rStr} (${t('overbought')}). ${t('takeProfit')}. MA7:${m7s} MA25:${m25s} · ${trend}${volStr?' · '+volStr:''}.`}
+  else if(ss>bs&&ss>=2){signal='SELL';strength='Moderate';reason=`RSI ${rStr} (${t('slowing')}). ${t('reversal')}. MA7:${m7s} · ${trend}${volStr?' · '+volStr:''}.`}
   else{signal='HOLD';strength='';reason=`RSI ${rStr} · MA7:${m7s} MA25:${m25s} · ${trend}. ${t('noSignal')}. ${t('waitEntry')}.`}
   const range=high-low,pos=range>0?(price-low)/range:0.5;
   return{signal,strength,rsi:rStr,ma7:m7s,ma25:m25s,volRatio:volRatio?volRatio.toFixed(2)+'x':'—',trend,reason,pos:(pos*100).toFixed(0)};
