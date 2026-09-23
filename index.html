@@ -1029,10 +1029,18 @@ async function analyzeReal(coinId,price,change,high,low){
   if(!hist||hist.prices.length<15)return analyzeFallback(price,change,high,low);
   // hist.prices come raw in USD from /api/chart; convert alongside the
   // current price so the MA7/MA25 series stays on a consistent scale.
-  const prices=[...hist.prices.map(cv),cv(price)];
+  const cp=cv(price);
+  const prices=[...hist.prices.map(cv),cp];
   const rsi=calcRSI(prices,14),ma7=calcMA(prices,7),ma25=calcMA(prices,25),volRatio=calcVolRatio(hist.volumes);
   const rv=rsi!==null?rsi:50;
-  const am7=ma7!==null?price>ma7:null,am25=ma25!==null?price>ma25:null;
+  // ma7/ma25 are computed from the currency-converted `prices` series above —
+  // comparing the raw (USD) `price` param against them mixed scales for any
+  // non-USD account (e.g. a CAD price is always numerically smaller than a
+  // CAD-scaled MA computed the same way price itself would be, so am7/am25
+  // came out false almost unconditionally, feeding a phantom "downtrend"
+  // buy-score bonus on nearly every coin for CAD/EUR users). Compare the
+  // same converted value the MAs were built from.
+  const am7=ma7!==null?cp>ma7:null,am25=ma25!==null?cp>ma25:null;
   const volStr=volRatio!==null?(volRatio>1.5?t('aboveAvg'):volRatio<0.7?t('belowAvg'):''):'';
   const trend=am7&&am25?t('uptrend'):!am7&&!am25?t('downtrend'):t('sideways');
   let bs=0,ss=0;
