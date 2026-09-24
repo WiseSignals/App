@@ -218,7 +218,7 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
         </select>
       </div>
       <div id="lTradingStrategyDesc" style="font-size:11px;color:var(--text-tertiary);margin:-4px 0 8px;line-height:1.5"></div>
-      <div class="setting-row"><span class="setting-label" id="lAutoRealOverride"></span><input type="checkbox" id="autoRealOverride" onchange="onAutoRealOverrideChange(this)" style="width:18px;height:18px;cursor:pointer"></div>
+      <div class="setting-row" id="rowAutoRealOverride"><span class="setting-label" id="lAutoRealOverride"></span><input type="checkbox" id="autoRealOverride" onchange="onAutoRealOverrideChange(this)" style="width:18px;height:18px;cursor:pointer"></div>
       <div id="lAutoRealOverrideDesc" style="font-size:11px;color:var(--text-tertiary);margin:-4px 0 8px;line-height:1.5"></div>
       <div class="setting-row"><span class="setting-label" id="lRiskLevel"></span>
         <div style="display:flex;align-items:center;gap:8px">
@@ -1895,7 +1895,16 @@ function isExcluded(coinId){
 function renderAutoTab(){
   const en=document.getElementById('autoEnabled');if(en)en.checked=!!appSettings.auto_trade_enabled;
   const ts=document.getElementById('tradingStrategy');if(ts)ts.value=appSettings.trading_strategy||'longterm';
-  const aro=document.getElementById('autoRealOverride');if(aro)aro.checked=!!appSettings.auto_real_override;
+  const aro=document.getElementById('autoRealOverride');
+  // "Keep auto-trade real in paper mode" only ever does anything while
+  // auto-trade itself is on — it decides what auto-trade does when it's
+  // running, nothing more. Leaving it independently toggleable while
+  // auto-trade is off let the two drift out of sync (e.g. checked, but with
+  // no visible effect, since the AUTO REAL badge only ever shows when
+  // auto_trade_enabled is also true) — disable it whenever auto-trade is
+  // off so its state always visibly tracks what it actually controls.
+  if(aro){aro.checked=!!appSettings.auto_real_override;aro.disabled=!appSettings.auto_trade_enabled;}
+  const aroRow=document.getElementById('rowAutoRealOverride');if(aroRow)aroRow.style.opacity=appSettings.auto_trade_enabled?'1':'0.5';
   const risk=document.getElementById('autoRisk');if(risk)risk.value=appSettings.auto_risk_pct||25;
   updateRiskDisplay(appSettings.auto_risk_pct||25);
   const delay=document.getElementById('autoDelay');if(delay)delay.value=appSettings.auto_delay_min||5;
