@@ -67,6 +67,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .live-pnl{font-size:11px;font-weight:500;margin-top:3px;display:inline-block;padding:2px 7px;border-radius:var(--radius-md);background:var(--green-bg);color:var(--green-text)}
 .live-pnl.neg{background:var(--red-bg);color:var(--red-text)}
 .holding-line{font-size:11px;color:var(--text-tertiary);margin-top:2px}
+.auto-blocked-note{font-size:10px;color:var(--amber-text);margin-top:3px;display:flex;align-items:center;gap:3px}
 .detail-panel{display:none;margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)}
 .detail-panel.open{display:block}
 .detail-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
@@ -458,6 +459,7 @@ en:{
   autoOn:'Auto-trade is ON · Strong signals execute after',minDelay:'min',
   autoTitle:'Auto-Trade',autoEnabled:'Auto-trade enabled',riskLevel:'Risk level (max {m}%)',
   autoRealOverride:'Keep auto-trade real in paper mode',autoRealOverrideDesc:'When ON, auto-trade keeps placing real Kraken orders even if you switch your own view back to Paper — a red "AUTO REAL" badge stays visible on every tab as a reminder. When OFF (default), switching to Paper also turns auto-trade off.',
+  autoBlockedNote:'Auto-trade would skip this',autoBlockedConfirm:'\n\n⚠️ Auto-trade would NOT buy this coin right now (still below yesterday\'s close, or a market-wide downturn) — you would be taking on manually the exact risk that filter exists to avoid.',
   delayBefore:'Delay before execute',autoDesc:'Uses up to {r}% of portfolio as shared budget. Only Strong signals. Waits {d} min. Multiple signals split budget equally.',
   queuedTrades:'Queued auto-trades',autoLog:'Auto-trade log',noQueue:'No auto-trades queued.\nEnable auto-trade and wait for a Strong signal.',noAutoLog:'No auto-trades executed yet.',
   excludeTitle:'Excluded from Auto-Trade',excludeDesc:'Toggle OFF any coin to skip it from auto-trading, even if it shows a Strong signal.',excluded:'Excluded',included:'Active',
@@ -528,6 +530,7 @@ fa:{
   autoOn:'اتوتریدر روشن است · سیگنال‌های قوی بعد از',minDelay:'دقیقه اجرا می‌شوند',
   autoTitle:'معامله اتوماتیک',autoEnabled:'اتوتریدر فعال',riskLevel:'سطح ریسک (حداکثر {m}٪)',
   autoRealOverride:'اتوتریدر واقعی در حالت آزمایشی هم فعال بماند',autoRealOverrideDesc:'در صورت فعال بودن، اتوتریدر حتی اگر نمای خودتان را به حالت آزمایشی برگردانید همچنان سفارش‌های واقعی در کرکن ثبت می‌کند — یک نشان قرمز «AUTO REAL» همیشه در همه تب‌ها نمایش داده می‌شود. در صورت غیرفعال بودن (پیش‌فرض)، برگشتن به حالت آزمایشی اتوتریدر را نیز خاموش می‌کند.',
+  autoBlockedNote:'اتوتریدر این را رد می‌کند',autoBlockedConfirm:'\n\n⚠️ اتوتریدر الان این کوین را نمی‌خرد (هنوز پایین‌تر از قیمت بسته‌شدن دیروز است، یا افت کلی بازار) — با خرید دستی همان ریسکی را می‌پذیرید که این فیلتر برای جلوگیری از آن طراحی شده.',
   delayBefore:'تأخیر قبل از اجرا',autoDesc:'حداکثر {r}٪ از پورتفولیو به عنوان بودجه مشترک. فقط سیگنال‌های قوی. {d} دقیقه تأخیر. چند سیگنال همزمان بودجه را تقسیم می‌کنند.',
   queuedTrades:'معاملات در صف',autoLog:'لاگ معاملات اتوماتیک',noQueue:'معامله‌ای در صف نیست.\nاتوتریدر را روشن کنید و منتظر سیگنال قوی باشید.',noAutoLog:'هنوز معامله اتوماتیکی اجرا نشده.',
   excludeTitle:'کوین‌های استثنا از اتوتریدر',excludeDesc:'هر کوینی که نمی‌خواهید اتوتریدر روی آن معامله کند را خاموش کنید.',excluded:'استثنا',included:'فعال',
@@ -598,6 +601,7 @@ es:{
   autoOn:'Auto-trade ACTIVO · Señales fuertes ejecutarán en',minDelay:'min',
   autoTitle:'Operación Automática',autoEnabled:'Auto-trade activado',riskLevel:'Nivel de riesgo (máx {m}%)',
   autoRealOverride:'Mantener auto-trade real en modo papel',autoRealOverrideDesc:'Si está ACTIVADO, auto-trade sigue colocando órdenes reales en Kraken aunque cambies tu propia vista a Papel — una insignia roja "AUTO REAL" permanece visible en todas las pestañas como recordatorio. Si está DESACTIVADO (por defecto), cambiar a Papel también apaga auto-trade.',
+  autoBlockedNote:'Auto-trade omitiría esto',autoBlockedConfirm:'\n\n⚠️ Auto-trade NO compraría esta moneda ahora mismo (todavía por debajo del cierre de ayer, o una caída general del mercado) — estarías asumiendo manualmente exactamente el riesgo que ese filtro existe para evitar.',
   delayBefore:'Retraso antes de ejecutar',autoDesc:'Usa hasta {r}% del portafolio como presupuesto compartido. Solo señales Fuertes. Espera {d} min. Múltiples señales dividen el presupuesto.',
   queuedTrades:'Auto-trades en cola',autoLog:'Registro auto-trade',noQueue:'Sin auto-trades en cola.\nActiva auto-trade y espera una señal Fuerte.',noAutoLog:'Sin auto-trades ejecutados.',
   excludeTitle:'Excluidos del Auto-Trade',excludeDesc:'Desactiva cualquier moneda para que el auto-trade la omita, incluso con señal Fuerte.',excluded:'Excluido',included:'Activo',
@@ -1316,7 +1320,7 @@ async function realBuy(coinId,amountOverride){
   // Buys now auto-fund from whichever of CAD/USD/EUR has cash (splitting across
   // them if needed — see krakenService.planBuySplit), so there's no single
   // "this trades against a different currency" warning to show here anymore.
-  if(!confirm(`Place a real Kraken limit buy order?\n${coin?.name} · ${curSym()}${amount.toFixed(2)}\nThis places a limit order near the current price — it may take time to fill. Funded from CAD/USD/EUR cash, splitting across them if needed. Check Portfolio → Real for status.`))return;
+  if(!confirm(`Place a real Kraken limit buy order?\n${coin?.name} · ${curSym()}${amount.toFixed(2)}\nThis places a limit order near the current price — it may take time to fill. Funded from CAD/USD/EUR cash, splitting across them if needed. Check Portfolio → Real for status.${isAutoBlocked(coinId)?t('autoBlockedConfirm'):''}`))return;
   try{
     const result=await apiFetch('/api/real/buy',{method:'POST',body:JSON.stringify({coinId,coinSymbol:coin?.symbol||coinId.toUpperCase(),amount})});
     const orders=result.orders||[result];
@@ -1368,7 +1372,7 @@ async function acceptTrade(coinId){
   const price=currentPrices[coinId];if(!price)return;
   const amount=selectedAmounts[coinId]||getDefaultAmount(portfolioBalance),fee=amount*FEE;
   const coin=COINS.find(c=>c.id===coinId);
-  if(!confirm(`${t('confirmBuy')}\n${coin?.name} · ${curSym()}${amount.toFixed(2)}\n${t('entry')}: ${curSym()}${price.toFixed(2)}\n${t('totalFees')}: ${curSym()}${fee.toFixed(3)}`))return;
+  if(!confirm(`${t('confirmBuy')}\n${coin?.name} · ${curSym()}${amount.toFixed(2)}\n${t('entry')}: ${curSym()}${price.toFixed(2)}\n${t('totalFees')}: ${curSym()}${fee.toFixed(3)}${isAutoBlocked(coinId)?t('autoBlockedConfirm'):''}`))return;
   try{
     await apiFetch('/api/portfolio/buy',{method:'POST',body:JSON.stringify({coinId,coinSymbol:coin?.symbol||coinId.toUpperCase(),amount,isManual:false})});
     delete selectedAmounts[coinId];
@@ -1425,7 +1429,7 @@ async function manualBuy(coinId,inputId){
   const price=currentPrices[coinId];if(!price)return;
   if(amount>portfolioBalance+0.01){alert(`${t('notEnoughBalance')}. Max: ${curSym()}${portfolioBalance.toFixed(2)}`);return;}
   const fee=amount*FEE,coin=COINS.find(c=>c.id===coinId);
-  if(!confirm(`${t('confirmBuy')}\n${coin?.name} · ${curSym()}${amount.toFixed(2)}\n${t('entry')}: ${curSym()}${price.toFixed(2)}\n${t('totalFees')}: ${curSym()}${fee.toFixed(3)}`))return;
+  if(!confirm(`${t('confirmBuy')}\n${coin?.name} · ${curSym()}${amount.toFixed(2)}\n${t('entry')}: ${curSym()}${price.toFixed(2)}\n${t('totalFees')}: ${curSym()}${fee.toFixed(3)}${isAutoBlocked(coinId)?t('autoBlockedConfirm'):''}`))return;
   try{
     await apiFetch('/api/portfolio/buy',{method:'POST',body:JSON.stringify({coinId,coinSymbol:coin?.symbol||coinId.toUpperCase(),amount,isManual:true})});
     await refreshPortfolio();renderCoins(lastData);renderPortfolio();
@@ -1493,6 +1497,14 @@ function switchChartTab(coinId,days,canvasId){
 // Kraken holdings, so the Signals list highlights/sorts correctly in either
 // mode. Real positions have no cost basis (Kraken doesn't track entry price),
 // so callers must not assume entry_price/entry_amount exist on the result.
+// Whether auto-trade would currently skip a Strong Buy on this coin (still
+// below yesterday's close, or a market-wide downturn) — computed
+// server-side by the exact same filter auto-trade itself checks (see
+// /api/prices' autoBuyBlocked field), so a manual buy confirm can warn
+// before taking on that risk unknowingly.
+function isAutoBlocked(coinId){
+  return !!lastData.find(x=>x.id===coinId)?.autoBuyBlocked;
+}
 function getHeldPosition(coinId){
   if(tradingMode==='real')return(realPortfolio.positions||[]).find(p=>p.coinId===coinId)||null;
   return portfolioPositions[coinId]||null;
@@ -1532,6 +1544,12 @@ async function renderCoins(data){
     currentPrices[coin.id]=cv(d.current_price);
     const sig=sigFor(coin.id);
     const filtered=passesFilter(sig,d.price_change_percentage_24h);
+    // The backend computes this using the exact same filter auto-trade
+    // itself checks (still below yesterday's close, or a market-wide
+    // downturn) — surfaced here so a coin auto-trade would silently skip
+    // doesn't look identical to one it would actually act on. Without this,
+    // "Strong BUY" reads as an all-clear even when it isn't one.
+    const autoBlocked=!!d.autoBuyBlocked&&sig.signal==='BUY';
     const isRealMode=tradingMode==='real';
     const hasPos=!!getHeldPosition(coin.id);
     const isAutoQueued=autoQueue.some(q=>q.coin_id===coin.id);
@@ -1663,6 +1681,7 @@ async function renderCoins(data){
         <div class="coin-info">
           <div class="coin-name">${coin.name}${hasPos?` <span style="font-size:10px;color:var(--green)">● ${t('holdingNote')}</span>`:''}${isAutoQueued?' <span class="auto-badge"><i class="ti ti-robot"></i></span>':''}</div>
           <div class="coin-price">${curSym()}${price}</div>${livePnl}
+          ${autoBlocked?`<div class="auto-blocked-note"><i class="ti ti-alert-triangle"></i> ${t('autoBlockedNote')}</div>`:''}
           ${hasPos?`<div class="holding-line">${posData.units.toFixed(6)} ${coin.symbol} · ${curSym()}${posVal.toFixed(2)}</div>`:''}
         </div>
         <div class="coin-right">
