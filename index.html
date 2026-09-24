@@ -966,7 +966,7 @@ async function saveSetting(k,v){
       // the page visually showing the new language while the reverted
       // appSettings silently disagreed until a refresh reloaded the real
       // (unsaved) value from the server.
-      if(k==='lang'){const sl=document.getElementById('sLang');if(sl)sl.value=v;applyLanguage();}
+      if(k==='lang'){const sl=document.getElementById('sLang');if(sl)sl.value=v;applyLanguage();refreshActiveTabContent();}
       const settingsBlob={};BLOB_SETTING_KEYS.forEach(key=>settingsBlob[key]=appSettings[key]);
       await apiFetch('/api/user/settings',{method:'PUT',body:JSON.stringify({settings:settingsBlob})});
       if(k==='tradeSize'){const r=document.getElementById('customDefaultRow');if(r)r.style.display=v==='custom'?'flex':'none'}
@@ -981,7 +981,7 @@ async function saveSetting(k,v){
     else if(k==='currency'){currentUser.currency=prevValue;const sc=document.getElementById('sCurrency');if(sc)sc.value=prevValue;}
     else appSettings[k]=prevValue;
     loadSettings();
-    if(k==='lang'){const sl=document.getElementById('sLang');if(sl)sl.value=prevValue;applyLanguage();}
+    if(k==='lang'){const sl=document.getElementById('sLang');if(sl)sl.value=prevValue;applyLanguage();refreshActiveTabContent();}
     showToast(e.message||'Could not save setting','red');
   }
   updateAutoNotice();
@@ -1956,6 +1956,25 @@ async function showTab(name){
   if(name==='auto'){await refreshAutoQueue();await refreshTrades();renderAutoTab();}
   if(name==='settings')loadSettings();
   if(name==='profile')renderProfile();
+}
+
+// Switching language only re-labels static elements via applyLanguage() —
+// dynamically-built content (coin cards, portfolio rows, trade history,
+// auto-queue/log) bakes translated strings (signal reasons, badges, etc.)
+// directly into template-string HTML at render time, so it stays in the old
+// language until whatever's currently visible is rebuilt. Without this, the
+// watchlist in particular looked like "the language picker doesn't work"
+// since it's the tab a user is normally looking at when they change it.
+function refreshActiveTabContent(){
+  const active=document.querySelector('.panel.active');
+  if(!active)return;
+  const name=active.id.replace('tab-','');
+  if(name==='signals'){if(lastData.length)renderCoins(lastData);}
+  else if(name==='portfolio'){renderPortfolio();if(tradingMode==='real')renderRealPortfolioView();}
+  else if(name==='history')renderHistory();
+  else if(name==='auto')renderAutoTab();
+  else if(name==='settings')loadSettings();
+  else if(name==='profile')renderProfile();
 }
 
 // ── LOAD SETTINGS ────────────────────────────────────────────
