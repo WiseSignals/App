@@ -1381,7 +1381,7 @@ function renderRealPortfolioView(){
   const positionsHtml=(realPortfolio.positions||[]).length?realPortfolio.positions.map(p=>`<div class="open-position">
       <div style="display:flex;justify-content:space-between;align-items:baseline">
         <span style="font-size:15px;font-weight:600">${curSym()}${p.value.toFixed(2)}</span>
-        <span style="font-size:11px;color:var(--text-tertiary)">${p.symbol}</span>
+        <span style="font-size:11px;color:var(--text-tertiary)">${p.symbol}${p.isAuto?` <span class="auto-badge"><i class="ti ti-robot"></i> AUTO</span>`:''}</span>
       </div>
       <div style="font-size:11px;color:var(--text-secondary);margin-top:2px">${p.units.toFixed(6)} ${p.symbol}</div>
     </div>`).join(''):`<div class="empty-state">No open Kraken positions.</div>`;
@@ -1797,7 +1797,7 @@ async function renderCoins(data){
           <div class="coin-name">${coin.name}${hasPos?` <span style="font-size:10px;color:var(--green)">● ${t('holdingNote')}</span>`:''}${isAutoQueued?' <span class="auto-badge"><i class="ti ti-robot"></i></span>':''}</div>
           <div class="coin-price">${curSym()}${price}</div>${livePnl}
           ${autoBlocked?`<div class="auto-blocked-note"><i class="ti ti-alert-triangle"></i> ${t('autoBlockedNote')}</div>`:''}
-          ${hasPos?`<div class="holding-line">${posData.units.toFixed(6)} ${coin.symbol} · ${curSym()}${posVal.toFixed(2)}</div>`:''}
+          ${hasPos?`<div class="holding-line">${posData.units.toFixed(6)} ${coin.symbol} · ${curSym()}${posVal.toFixed(2)}${(posData.is_auto||posData.isAuto)?` <span class="auto-badge"><i class="ti ti-robot"></i> AUTO</span>`:''}</div>`:''}
         </div>
         <div class="coin-right">
           <div><span class="signal-badge ${dbc}">${dsig}</span></div>
