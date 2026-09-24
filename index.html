@@ -476,8 +476,15 @@ async function apiFetch(path,options={}){
     clearTimeout(timer);
   }
   if(res.status===401){localStorage.removeItem('ks_token');window.location.href='login.html';throw new Error('Unauthorized');}
-  const data=await res.json().catch(()=>({}));
-  if(!res.ok)throw new Error(data.error||'Request failed');
+  let parseFailed=false;
+  const data=await res.json().catch(()=>{parseFailed=true;return{};});
+  // A bare "Request failed" gave no way to tell a backend error (with a
+  // real message) from a proxy/gateway error (an HTML error page instead
+  // of JSON, so data.error is empty) from a truncated response on a flaky
+  // connection (parseFailed) — surfacing the status code and which case
+  // this was makes the next report of this diagnosable instead of another
+  // guessing round.
+  if(!res.ok)throw new Error(data.error||`Request failed (${res.status}${parseFailed?', bad response':''}) on ${path}`);
   return data;
 }
 function daysToTimeframe(days){return{1:'1d',3:'3d',7:'1w',30:'1m'}[days]||'1d';}
