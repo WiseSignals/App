@@ -484,12 +484,21 @@ function daysToTimeframe(days){return{1:'1d',3:'3d',7:'1w',30:'1m'}[days]||'1d';
 
 async function loadUser(){
   if(!getToken()){window.location.href='login.html';return null;}
-  try{
-    currentUser=await apiFetch('/api/user/me');
-    return currentUser;
-  }catch(e){
-    window.location.href='login.html';return null;
-  }
+  // apiFetch itself already redirects to login.html on a genuine 401 (and
+  // clears the stored token first, so login.html's own "already logged in"
+  // check won't bounce straight back). This used to ALSO redirect here on
+  // ANY other error — network blip, the request timeout, a transient 5xx —
+  // without ever clearing the token, since the user's login was actually
+  // still valid. login.html would then see the untouched token and redirect
+  // straight back to index.html, which would hit the same transient failure
+  // and redirect to login.html again — an infinite bounce between the two
+  // pages (confirmed live: reported as "flashing between login page and
+  // watchlist"). Letting a non-auth error propagate instead means init()'s
+  // top-level catch shows a real error with a Reload button — correct,
+  // since the user IS logged in and a login screen was never the right
+  // response to a network hiccup.
+  currentUser=await apiFetch('/api/user/me');
+  return currentUser;
 }
 
 // ── LANGUAGE ─────────────────────────────────────────────────
