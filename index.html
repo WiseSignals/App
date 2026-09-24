@@ -1832,7 +1832,7 @@ async function renderCoins(data){
           <button class="btn btn-skip" onclick="event.stopPropagation();skipTrade('${coin.id}')">${t('skip')}</button>
         </div>`;
     }else if(filtered&&sig.signal==='SELL'&&hasPos){
-      const pnlRow=posPnl!==null?`<div style="display:flex;justify-content:space-between"><span>${t('entry')}</span><span>${curSym()}${posData.entry_price.toFixed(2)}</span></div>
+      const pnlRow=posPnl!==null?`<div style="display:flex;justify-content:space-between"><span>${t('entry')}</span><span>${curSym()}${posEntryPrice.toFixed(2)}</span></div>
         <div style="display:flex;justify-content:space-between;margin-top:3px"><span>${t('now')}</span><span>${curSym()}${posVal.toFixed(2)}</span></div>
         <div style="display:flex;justify-content:space-between;margin-top:3px;font-weight:500"><span>${t('pnl')}</span><span class="${posPnl>=0?'pos':'neg'}">${posPnl>=0?'+':''}${curSym()}${posPnl.toFixed(2)}</span></div>`
         :`<div style="display:flex;justify-content:space-between"><span>${posData.units.toFixed(6)} ${coin.symbol}</span><span>${curSym()}${posVal.toFixed(2)}</span></div>`;
