@@ -196,6 +196,7 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
   </div>
 
   <div id="tab-history" class="panel">
+    <div style="font-size:12px;color:var(--text-tertiary);padding:0.75rem 1rem 0;line-height:1.5" id="lHistoryDesc"></div>
     <div style="display:flex;gap:6px;padding:0.5rem 1rem;flex-wrap:wrap">
       <div class="chart-tab period-tab active" data-period="yesterday" onclick="selectPeriod('yesterday')" id="ptYesterday"></div>
       <div class="chart-tab period-tab" data-period="week" onclick="selectPeriod('week')" id="ptWeek"></div>
@@ -520,6 +521,7 @@ en:{
   totalValue:'Total value',totalPnl:'Total P&L',cashAvailable:'Cash available',winRate:'Win rate',
   tradesTaken:'Trades taken',inPositions:'In positions',openPositions:'Open positions',
   noPositions:'No open positions yet.',closedTrades:'Closed trades',noTrades:'No closed trades yet.\nAccept a signal to start.',
+  historyDesc:'Completed trade cycles only — a buy followed by its matching sell, with the realized profit or loss (manual or auto). Currently open positions aren\'t closed yet, so they show in Portfolio instead.',
   yesterday:'Yesterday',thisWeek:'This Week',thisMonth:'This Month',allTime:'All Time',
   bestTrade:'Best trade',worstTrade:'Worst trade',avgPerTrade:'Avg per trade',feesPaid:'Fees paid',
   trades:'trades',wins:'wins',losses:'losses',noTradesPeriod:'No trades in this period.',
@@ -600,6 +602,7 @@ fa:{
   totalValue:'ارزش کل',totalPnl:'سود/زیان کل',cashAvailable:'موجودی نقد',winRate:'نرخ موفقیت',
   tradesTaken:'معاملات انجام شده',inPositions:'در موقعیت‌ها',openPositions:'موقعیت‌های باز',
   noPositions:'هنوز موقعیت بازی ندارید.',closedTrades:'معاملات بسته شده',noTrades:'هنوز معامله‌ای بسته نشده.\nیک سیگنال را تأیید کنید.',
+  historyDesc:'فقط چرخه‌های کامل‌شده معامله — یک خرید به همراه فروش متناظرش، با سود یا زیان تحقق‌یافته (دستی یا خودکار). موقعیت‌های بازِ فعلی هنوز بسته نشده‌اند، پس در تب پورتفولیو نمایش داده می‌شوند.',
   yesterday:'دیروز',thisWeek:'این هفته',thisMonth:'این ماه',allTime:'همه زمان‌ها',
   bestTrade:'بهترین معامله',worstTrade:'بدترین معامله',avgPerTrade:'میانگین هر معامله',feesPaid:'کارمزد پرداختی',
   trades:'معامله',wins:'برد',losses:'باخت',noTradesPeriod:'در این دوره معامله‌ای نبود.',
@@ -680,6 +683,7 @@ es:{
   totalValue:'Valor total',totalPnl:'G/P total',cashAvailable:'Efectivo disponible',winRate:'Tasa de éxito',
   tradesTaken:'Operaciones',inPositions:'En posiciones',openPositions:'Posiciones abiertas',
   noPositions:'Sin posiciones abiertas.',closedTrades:'Operaciones cerradas',noTrades:'Sin operaciones cerradas.\nAcepta una señal para empezar.',
+  historyDesc:'Solo ciclos de operación completados — una compra seguida de su venta correspondiente, con la ganancia o pérdida realizada (manual o automática). Las posiciones abiertas actuales aún no están cerradas, así que se muestran en Portafolio.',
   yesterday:'Ayer',thisWeek:'Esta semana',thisMonth:'Este mes',allTime:'Todo el tiempo',
   bestTrade:'Mejor operación',worstTrade:'Peor operación',avgPerTrade:'Promedio/operación',feesPaid:'Comisiones',
   trades:'operaciones',wins:'victorias',losses:'pérdidas',noTradesPeriod:'Sin operaciones en este período.',
@@ -781,6 +785,7 @@ function applyLanguage(){
   const ptm={ptYesterday:'yesterday',ptWeek:'thisWeek',ptMonth:'thisMonth',ptAll:'allTime'};
   Object.entries(ptm).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   const lct=document.getElementById('lClosedTrades');if(lct)lct.textContent=t('closedTrades');
+  const lhd=document.getElementById('lHistoryDesc');if(lhd)lhd.textContent=t('historyDesc');
   // Auto tab
   const am={lAutoTitle:'autoTitle',lAutoEnabled:'autoEnabled',lTradingStrategy:'tradingStrategy',lTradingStrategyDesc:'tradingStrategyDesc',oLongterm:'strategyLongterm',oScalp:'strategyScalp',lStopLoss:'stopLoss',oStopLossCustom:'custom',oStopLossOff:'stopLossOff',lStopLossCustomPct:'customPct',lStopLossDesc:'stopLossDesc',lAutoRealOverride:'autoRealOverride',lAutoRealOverrideDesc:'autoRealOverrideDesc',lMaxOrder:'maxOrder',oMaxUnlimited:'maxOrderUnlimited',oMaxCustom:'custom',lMaxOrderCustomAmt:'customAmt',lMaxOrderDesc:'maxOrderDesc',lDelay:'delayBefore',lQueuedTrades:'queuedTrades',lAutoLog:'autoLog',lExcludeTitle:'excludeTitle'};
   Object.entries(am).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
