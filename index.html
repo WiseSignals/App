@@ -226,6 +226,18 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
           <span id="riskDisplay" style="font-size:14px;font-weight:600;color:var(--green);min-width:36px">25%</span>
         </div>
       </div>
+      <div class="setting-row"><span class="setting-label" id="lMaxOrder"></span>
+        <select id="autoMaxOrder" onchange="onAutoMaxOrderChange(this)">
+          <option value="0" id="oMaxUnlimited"></option>
+          <option value="10">$10</option><option value="20">$20</option><option value="50">$50</option>
+          <option value="custom" id="oMaxCustom"></option>
+        </select>
+      </div>
+      <div class="setting-row" id="rowMaxOrderCustom" style="display:none">
+        <span class="setting-label" id="lMaxOrderCustomAmt"></span>
+        <input type="number" id="autoMaxOrderCustom" min="1" placeholder="30" style="width:80px" onchange="onAutoMaxOrderCustomChange(this)">
+      </div>
+      <div id="lMaxOrderDesc" style="font-size:11px;color:var(--text-tertiary);margin:-4px 0 8px;line-height:1.5"></div>
       <div class="setting-row"><span class="setting-label" id="lDelay"></span>
         <select id="autoDelay" onchange="saveSetting('autoDelay',this.value)">
           <option value="5">5</option><option value="10">10</option><option value="15">15</option>
@@ -488,6 +500,8 @@ en:{
   tradingStrategy:'Strategy',strategyLongterm:'Long-term',strategyScalp:'Scalp',
   tradingStrategyDesc:'Long-term reads daily price history, waits several minutes to confirm a signal, and takes profit in stages — built to hold a position over days. Scalp reads hourly history instead, confirms in 2 minutes, only enters when the move is big enough to clear round-trip Kraken fees with margin, always exits fully rather than in stages, and adds a fast stop-loss that sells immediately if a position drops 3% from entry — built for several quick trades a day. Applies to both manual signals shown here and auto-trade.',
   autoRealOverride:'Keep auto-trade real in paper mode',autoRealOverrideDesc:'When ON, auto-trade keeps placing real Kraken orders even if you switch your own view back to Paper — a red "AUTO REAL" badge stays visible on every tab as a reminder. When OFF (default), switching to Paper also turns auto-trade off.',
+  maxOrder:'Max order size',maxOrderUnlimited:'Unlimited',
+  maxOrderDesc:'Unlimited (default): one order per coin, sized from your risk %, using the full budget — auto-trade won\'t buy more of a coin it already holds. Setting a cap instead bounds every order at that amount and lets auto-trade buy the same coin again on a later cycle if it\'s still a Strong Buy, building the position in capped steps instead of one large order.',
   autoBlockedNote:'Auto-trade would skip this',autoBlockedConfirm:'\n\n⚠️ Auto-trade would NOT buy this coin right now (still below yesterday\'s close, or a market-wide downturn) — you would be taking on manually the exact risk that filter exists to avoid.',
   delayBefore:'Delay before execute',autoDesc:'Uses up to {r}% of portfolio as shared budget. Only Strong signals. Waits {d} min. Multiple signals split budget equally.',
   queuedTrades:'Queued auto-trades',autoLog:'Auto-trade log',noQueue:'No auto-trades queued.\nEnable auto-trade and wait for a Strong signal.',noAutoLog:'No auto-trades executed yet.',
@@ -562,6 +576,8 @@ fa:{
   tradingStrategy:'استراتژی',strategyLongterm:'بلند مدت',strategyScalp:'نوسان‌گیری',
   tradingStrategyDesc:'استراتژی بلندمدت از تاریخچه قیمت روزانه استفاده می‌کند، چند دقیقه صبر می‌کند تا سیگنال تأیید شود و سود را در چند مرحله برداشت می‌کند — برای نگه‌داشتن یک موقعیت در چند روز طراحی شده. نوسان‌گیری در عوض از تاریخچه ساعتی استفاده می‌کند، تنها ۲ دقیقه صبر می‌کند، فقط زمانی وارد می‌شود که حرکت قیمت به اندازه‌ای بزرگ باشد که کارمزد رفت‌وبرگشت کرکن را با حاشیه سود پوشش دهد، همیشه به‌طور کامل (نه مرحله‌ای) خارج می‌شود و یک حد ضرر سریع دارد که اگر موقعیت ۳٪ از قیمت خرید افت کند بلافاصله می‌فروشد — برای چند معامله سریع در روز طراحی شده. این تنظیم روی سیگنال‌های دستی نمایش داده‌شده در اینجا و اتوتریدر هر دو اعمال می‌شود.',
   autoRealOverride:'اتوتریدر واقعی در حالت آزمایشی هم فعال بماند',autoRealOverrideDesc:'در صورت فعال بودن، اتوتریدر حتی اگر نمای خودتان را به حالت آزمایشی برگردانید همچنان سفارش‌های واقعی در کرکن ثبت می‌کند — یک نشان قرمز «AUTO REAL» همیشه در همه تب‌ها نمایش داده می‌شود. در صورت غیرفعال بودن (پیش‌فرض)، برگشتن به حالت آزمایشی اتوتریدر را نیز خاموش می‌کند.',
+  maxOrder:'حداکثر اندازه سفارش',maxOrderUnlimited:'نامحدود',
+  maxOrderDesc:'نامحدود (پیش‌فرض): یک سفارش برای هر کوین، بر اساس درصد ریسک شما، با کل بودجه — اتوتریدر کوینی که از قبل نگه‌داشته را دوباره نمی‌خرد. تعیین یک سقف باعث می‌شود هر سفارش به همان مقدار محدود شود و اتوتریدر بتواند همان کوین را در چرخه بعدی هم بخرد اگر هنوز سیگنال خرید قوی باشد — یعنی موقعیت را در قدم‌های محدود بسازد به‌جای یک سفارش بزرگ.',
   autoBlockedNote:'اتوتریدر این را رد می‌کند',autoBlockedConfirm:'\n\n⚠️ اتوتریدر الان این کوین را نمی‌خرد (هنوز پایین‌تر از قیمت بسته‌شدن دیروز است، یا افت کلی بازار) — با خرید دستی همان ریسکی را می‌پذیرید که این فیلتر برای جلوگیری از آن طراحی شده.',
   delayBefore:'تأخیر قبل از اجرا',autoDesc:'حداکثر {r}٪ از پورتفولیو به عنوان بودجه مشترک. فقط سیگنال‌های قوی. {d} دقیقه تأخیر. چند سیگنال همزمان بودجه را تقسیم می‌کنند.',
   queuedTrades:'معاملات در صف',autoLog:'لاگ معاملات اتوماتیک',noQueue:'معامله‌ای در صف نیست.\nاتوتریدر را روشن کنید و منتظر سیگنال قوی باشید.',noAutoLog:'هنوز معامله اتوماتیکی اجرا نشده.',
@@ -636,6 +652,8 @@ es:{
   tradingStrategy:'Estrategia',strategyLongterm:'Largo plazo',strategyScalp:'Scalping',
   tradingStrategyDesc:'Largo plazo usa el historial de precios diario, espera varios minutos para confirmar una señal y toma ganancias en etapas — pensado para mantener una posición durante días. Scalping usa en cambio el historial por hora, confirma en 2 minutos, solo entra cuando el movimiento es lo bastante grande para cubrir con margen las comisiones de ida y vuelta en Kraken, siempre sale por completo en vez de por etapas, y añade un stop-loss rápido que vende de inmediato si una posición cae 3% desde la entrada — pensado para varias operaciones rápidas al día. Se aplica tanto a las señales manuales mostradas aquí como a auto-trade.',
   autoRealOverride:'Mantener auto-trade real en modo papel',autoRealOverrideDesc:'Si está ACTIVADO, auto-trade sigue colocando órdenes reales en Kraken aunque cambies tu propia vista a Papel — una insignia roja "AUTO REAL" permanece visible en todas las pestañas como recordatorio. Si está DESACTIVADO (por defecto), cambiar a Papel también apaga auto-trade.',
+  maxOrder:'Tamaño máximo de orden',maxOrderUnlimited:'Ilimitado',
+  maxOrderDesc:'Ilimitado (por defecto): una orden por moneda, calculada con tu % de riesgo, usando todo el presupuesto — auto-trade no comprará más de una moneda que ya tiene. Fijar un límite en cambio acota cada orden a esa cantidad y permite que auto-trade compre la misma moneda otra vez en un ciclo posterior si sigue en Compra Fuerte, construyendo la posición en pasos limitados en vez de una sola orden grande.',
   autoBlockedNote:'Auto-trade omitiría esto',autoBlockedConfirm:'\n\n⚠️ Auto-trade NO compraría esta moneda ahora mismo (todavía por debajo del cierre de ayer, o una caída general del mercado) — estarías asumiendo manualmente exactamente el riesgo que ese filtro existe para evitar.',
   delayBefore:'Retraso antes de ejecutar',autoDesc:'Usa hasta {r}% del portafolio como presupuesto compartido. Solo señales Fuertes. Espera {d} min. Múltiples señales dividen el presupuesto.',
   queuedTrades:'Auto-trades en cola',autoLog:'Registro auto-trade',noQueue:'Sin auto-trades en cola.\nActiva auto-trade y espera una señal Fuerte.',noAutoLog:'Sin auto-trades ejecutados.',
@@ -724,7 +742,7 @@ function applyLanguage(){
   Object.entries(ptm).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   const lct=document.getElementById('lClosedTrades');if(lct)lct.textContent=t('closedTrades');
   // Auto tab
-  const am={lAutoTitle:'autoTitle',lAutoEnabled:'autoEnabled',lTradingStrategy:'tradingStrategy',lTradingStrategyDesc:'tradingStrategyDesc',oLongterm:'strategyLongterm',oScalp:'strategyScalp',lAutoRealOverride:'autoRealOverride',lAutoRealOverrideDesc:'autoRealOverrideDesc',lDelay:'delayBefore',lQueuedTrades:'queuedTrades',lAutoLog:'autoLog',lExcludeTitle:'excludeTitle'};
+  const am={lAutoTitle:'autoTitle',lAutoEnabled:'autoEnabled',lTradingStrategy:'tradingStrategy',lTradingStrategyDesc:'tradingStrategyDesc',oLongterm:'strategyLongterm',oScalp:'strategyScalp',lAutoRealOverride:'autoRealOverride',lAutoRealOverrideDesc:'autoRealOverrideDesc',lMaxOrder:'maxOrder',oMaxUnlimited:'maxOrderUnlimited',oMaxCustom:'custom',lMaxOrderCustomAmt:'customAmt',lMaxOrderDesc:'maxOrderDesc',lDelay:'delayBefore',lQueuedTrades:'queuedTrades',lAutoLog:'autoLog',lExcludeTitle:'excludeTitle'};
   Object.entries(am).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   const maxRisk=currentUser?.plan==='platinum'?100:50;
   const lrl=document.getElementById('lRiskLevel');if(lrl)lrl.textContent=t('riskLevel').replace('{m}',maxRisk);
@@ -939,6 +957,7 @@ function loadAppSettings(){
     auto_trade_enabled:!!currentUser.auto_trade_enabled,
     auto_real_override:!!currentUser.auto_real_override,
     trading_strategy:currentUser.trading_strategy||'longterm',
+    auto_max_order_usd:currentUser.auto_max_order_usd||0,
     auto_risk_pct:currentUser.auto_risk_pct||25,
     auto_delay_min:currentUser.auto_delay_min||5,
     auto_exclude:(()=>{try{return JSON.parse(currentUser.auto_exclude||'[]')}catch(e){return []}})()
@@ -947,7 +966,7 @@ function loadAppSettings(){
 
 async function saveSetting(k,v){
   if(k==='autoEnabled'||k==='autoRealOverride')v=(v===true||v==='true');
-  const prevValue=k==='autoEnabled'?appSettings.auto_trade_enabled:k==='autoRealOverride'?appSettings.auto_real_override:k==='autoRisk'?appSettings.auto_risk_pct:k==='autoDelay'?appSettings.auto_delay_min:k==='tradingStrategy'?appSettings.trading_strategy:k==='currency'?currentUser.currency:appSettings[k];
+  const prevValue=k==='autoEnabled'?appSettings.auto_trade_enabled:k==='autoRealOverride'?appSettings.auto_real_override:k==='autoRisk'?appSettings.auto_risk_pct:k==='autoDelay'?appSettings.auto_delay_min:k==='tradingStrategy'?appSettings.trading_strategy:k==='autoMaxOrder'?appSettings.auto_max_order_usd:k==='currency'?currentUser.currency:appSettings[k];
   try{
     if(k==='currency'){
       currentUser.currency=v;
@@ -970,6 +989,10 @@ async function saveSetting(k,v){
       await apiFetch('/api/user/settings',{method:'PUT',body:JSON.stringify({trading_strategy:v})});
       renderAutoTab();
       if(lastData.length)await renderCoins(lastData);
+    }else if(k==='autoMaxOrder'){
+      appSettings.auto_max_order_usd=parseFloat(v)||0;
+      await apiFetch('/api/user/settings',{method:'PUT',body:JSON.stringify({auto_max_order_usd:appSettings.auto_max_order_usd})});
+      renderAutoTab();
     }else if(k==='autoRisk'){
       appSettings.auto_risk_pct=parseInt(v);
       await apiFetch('/api/user/settings',{method:'PUT',body:JSON.stringify({auto_risk_pct:parseInt(v)})});
@@ -996,6 +1019,7 @@ async function saveSetting(k,v){
     if(k==='autoEnabled')appSettings.auto_trade_enabled=prevValue;
     else if(k==='autoRealOverride'){appSettings.auto_real_override=prevValue;currentUser.auto_real_override=prevValue;renderModeBadge();}
     else if(k==='tradingStrategy'){appSettings.trading_strategy=prevValue;currentUser.trading_strategy=prevValue;const ts=document.getElementById('tradingStrategy');if(ts)ts.value=prevValue;}
+    else if(k==='autoMaxOrder'){appSettings.auto_max_order_usd=prevValue;currentUser.auto_max_order_usd=prevValue;renderAutoTab();}
     else if(k==='autoRisk')appSettings.auto_risk_pct=prevValue;
     else if(k==='autoDelay')appSettings.auto_delay_min=prevValue;
     else if(k==='currency'){currentUser.currency=prevValue;const sc=document.getElementById('sCurrency');if(sc)sc.value=prevValue;}
@@ -1057,6 +1081,20 @@ function onTradingStrategyChange(el){
     return;
   }
   saveSetting('tradingStrategy',el.value);
+}
+// A per-order dollar cap (0 = unlimited). Picking "custom" just reveals the
+// amount field below rather than saving anything yet — the actual save
+// happens once a number is typed (onAutoMaxOrderCustomChange), same
+// reveal-then-fill pattern as the existing default-trade-size custom option.
+function onAutoMaxOrderChange(el){
+  const row=document.getElementById('rowMaxOrderCustom');
+  if(el.value==='custom'){if(row)row.style.display='flex';return;}
+  if(row)row.style.display='none';
+  saveSetting('autoMaxOrder',el.value);
+}
+function onAutoMaxOrderCustomChange(el){
+  const v=parseFloat(el.value);
+  if(!isNaN(v)&&v>0)saveSetting('autoMaxOrder',v);
 }
 
 // ── WATCHLIST ────────────────────────────────────────────────
@@ -1926,6 +1964,14 @@ function renderAutoTab(){
   if(aro){aro.checked=!!appSettings.auto_real_override;aro.disabled=!appSettings.auto_trade_enabled;}
   const aroRow=document.getElementById('rowAutoRealOverride');if(aroRow)aroRow.style.opacity=appSettings.auto_trade_enabled?'1':'0.5';
   const risk=document.getElementById('autoRisk');if(risk)risk.value=appSettings.auto_risk_pct||25;
+  const maxOrder=document.getElementById('autoMaxOrder'),maxOrderCustom=document.getElementById('autoMaxOrderCustom'),maxOrderRow=document.getElementById('rowMaxOrderCustom');
+  if(maxOrder){
+    const mv=appSettings.auto_max_order_usd||0;
+    const isPreset=[0,10,20,50].includes(mv);
+    maxOrder.value=isPreset?String(mv):'custom';
+    if(maxOrderRow)maxOrderRow.style.display=isPreset?'none':'flex';
+    if(!isPreset&&maxOrderCustom)maxOrderCustom.value=mv;
+  }
   updateRiskDisplay(appSettings.auto_risk_pct||25);
   const delay=document.getElementById('autoDelay');if(delay)delay.value=appSettings.auto_delay_min||5;
   const qEl=document.getElementById('autoQueue');
