@@ -267,11 +267,12 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
         <input type="number" id="autoMaxOrderCustom" min="1" placeholder="30" style="width:80px" onchange="onAutoMaxOrderCustomChange(this)">
       </div>
       <div id="lMaxOrderDesc" style="font-size:11px;color:var(--text-tertiary);margin:-4px 0 8px;line-height:1.5"></div>
-      <div class="setting-row"><span class="setting-label" id="lDelay"></span>
+      <div class="setting-row" id="rowDelay"><span class="setting-label" id="lDelay"></span>
         <select id="autoDelay" onchange="saveSetting('autoDelay',this.value)">
           <option value="5">5</option><option value="10">10</option><option value="15">15</option>
         </select>
       </div>
+      <div id="lDelayScalpNote" style="font-size:11px;color:var(--text-tertiary);margin:-4px 0 8px;line-height:1.5;display:none"></div>
       <div id="autoDesc" style="font-size:11px;color:var(--text-tertiary);margin-top:8px;line-height:1.6"></div>
     </div>
     <div class="section-label" id="lQueuedTrades"></div>
@@ -560,7 +561,7 @@ en:{
   stopLossOffWarning:'Turning the stop-loss off means a losing scalp position has no automatic exit at all — it will keep being held no matter how far it drops, until a Strong Sell signal fires (which may never happen if the coin just keeps falling). This is not recommended. Turn it off anyway?',
   customPct:'Custom (%)',stopLossCustomRange:'Stop-loss must be between 3% and 15%',
   autoBlockedNote:'Auto-trade would skip this',autoBlockedConfirm:'\n\n⚠️ Auto-trade would NOT buy this coin right now (still below yesterday\'s close, or a market-wide downturn) — you would be taking on manually the exact risk that filter exists to avoid.',
-  delayBefore:'Delay before execute',autoDesc:'Uses up to {r}% of portfolio as shared budget. Only Strong signals. Waits {d} min. Multiple signals split budget equally.',
+  delayBefore:'Delay before execute',delayScalpNote:'Scalp uses a fixed 2-minute confirmation delay — not adjustable. This setting only applies to Long-term.',autoDesc:'Uses up to {r}% of portfolio as shared budget. Only Strong signals. Waits {d} min. Multiple signals split budget equally.',
   queuedTrades:'Queued auto-trades',autoLog:'Auto-trade log',noQueue:'No auto-trades queued.\nEnable auto-trade and wait for a Strong signal.',noAutoLog:'No auto-trades executed yet.',
   excludeTitle:'Excluded from Auto-Trade',excludeDesc:'Toggle OFF any coin to skip it from auto-trading, even if it shows a Strong signal.',excluded:'Excluded',included:'Active',
   sigSens:'Signal Sensitivity',minStrength:'Min signal strength',minMove:'Min 24h move',
@@ -645,7 +646,7 @@ fa:{
   stopLossOffWarning:'خاموش کردن حد ضرر یعنی یک موقعیت زیان‌ده در نوسان‌گیری هیچ خروج خودکاری نخواهد داشت — تا زمانی که سیگنال فروش قوی صادر شود (که ممکن است هرگز رخ ندهد اگر کوین فقط افت کند) نگه‌داشته می‌شود. این توصیه نمی‌شود. با این حال خاموش شود؟',
   customPct:'دلخواه (٪)',stopLossCustomRange:'حد ضرر باید بین ۳٪ تا ۱۵٪ باشد',
   autoBlockedNote:'اتوتریدر این را رد می‌کند',autoBlockedConfirm:'\n\n⚠️ اتوتریدر الان این کوین را نمی‌خرد (هنوز پایین‌تر از قیمت بسته‌شدن دیروز است، یا افت کلی بازار) — با خرید دستی همان ریسکی را می‌پذیرید که این فیلتر برای جلوگیری از آن طراحی شده.',
-  delayBefore:'تأخیر قبل از اجرا',autoDesc:'حداکثر {r}٪ از پورتفولیو به عنوان بودجه مشترک. فقط سیگنال‌های قوی. {d} دقیقه تأخیر. چند سیگنال همزمان بودجه را تقسیم می‌کنند.',
+  delayBefore:'تأخیر قبل از اجرا',delayScalpNote:'نوسان‌گیری از تأخیر تأیید ثابت ۲ دقیقه‌ای استفاده می‌کند — قابل تنظیم نیست. این تنظیم فقط برای بلند مدت است.',autoDesc:'حداکثر {r}٪ از پورتفولیو به عنوان بودجه مشترک. فقط سیگنال‌های قوی. {d} دقیقه تأخیر. چند سیگنال همزمان بودجه را تقسیم می‌کنند.',
   queuedTrades:'معاملات در صف',autoLog:'لاگ معاملات اتوماتیک',noQueue:'معامله‌ای در صف نیست.\nاتوتریدر را روشن کنید و منتظر سیگنال قوی باشید.',noAutoLog:'هنوز معامله اتوماتیکی اجرا نشده.',
   excludeTitle:'کوین‌های استثنا از اتوتریدر',excludeDesc:'هر کوینی که نمی‌خواهید اتوتریدر روی آن معامله کند را خاموش کنید.',excluded:'استثنا',included:'فعال',
   sigSens:'حساسیت سیگنال',minStrength:'حداقل قدرت سیگنال',minMove:'حداقل تغییر ۲۴ ساعته',
@@ -730,7 +731,7 @@ es:{
   stopLossOffWarning:'Desactivar el stop-loss significa que una posición de scalping en pérdida no tendrá ninguna salida automática — se mantendrá sin importar cuánto caiga, hasta que se dispare una señal de Venta Fuerte (que puede no ocurrir nunca si la moneda solo sigue cayendo). No se recomienda. ¿Desactivar de todas formas?',
   customPct:'Personalizado (%)',stopLossCustomRange:'El stop-loss debe estar entre 3% y 15%',
   autoBlockedNote:'Auto-trade omitiría esto',autoBlockedConfirm:'\n\n⚠️ Auto-trade NO compraría esta moneda ahora mismo (todavía por debajo del cierre de ayer, o una caída general del mercado) — estarías asumiendo manualmente exactamente el riesgo que ese filtro existe para evitar.',
-  delayBefore:'Retraso antes de ejecutar',autoDesc:'Usa hasta {r}% del portafolio como presupuesto compartido. Solo señales Fuertes. Espera {d} min. Múltiples señales dividen el presupuesto.',
+  delayBefore:'Retraso antes de ejecutar',delayScalpNote:'Scalping usa un retraso de confirmación fijo de 2 minutos — no ajustable. Este ajuste solo aplica a Largo plazo.',autoDesc:'Usa hasta {r}% del portafolio como presupuesto compartido. Solo señales Fuertes. Espera {d} min. Múltiples señales dividen el presupuesto.',
   queuedTrades:'Auto-trades en cola',autoLog:'Registro auto-trade',noQueue:'Sin auto-trades en cola.\nActiva auto-trade y espera una señal Fuerte.',noAutoLog:'Sin auto-trades ejecutados.',
   excludeTitle:'Excluidos del Auto-Trade',excludeDesc:'Desactiva cualquier moneda para que el auto-trade la omita, incluso con señal Fuerte.',excluded:'Excluido',included:'Activo',
   sigSens:'Sensibilidad de señal',minStrength:'Fuerza mínima',minMove:'Movimiento mín 24h',
@@ -822,13 +823,13 @@ function applyLanguage(){
   const lct=document.getElementById('lClosedTrades');if(lct)lct.textContent=t('closedTrades');
   const lhd=document.getElementById('lHistoryDesc');if(lhd)lhd.textContent=t('historyDesc');
   // Auto tab
-  const am={lAutoTitle:'autoTitle',lAutoEnabled:'autoEnabled',lTradingStrategy:'tradingStrategy',lTradingStrategyDesc:'tradingStrategyDesc',oLongterm:'strategyLongterm',oScalp:'strategyScalp',lStopLoss:'stopLoss',oStopLossCustom:'custom',oStopLossOff:'stopLossOff',lStopLossCustomPct:'customPct',lStopLossDesc:'stopLossDesc',lAutoRealOverride:'autoRealOverride',lAutoRealOverrideDesc:'autoRealOverrideDesc',lMaxOrder:'maxOrder',oMaxUnlimited:'maxOrderUnlimited',oMaxCustom:'custom',lMaxOrderCustomAmt:'customAmt',lMaxOrderDesc:'maxOrderDesc',lDelay:'delayBefore',lQueuedTrades:'queuedTrades',lAutoLog:'autoLog',lExcludeTitle:'excludeTitle'};
+  const am={lAutoTitle:'autoTitle',lAutoEnabled:'autoEnabled',lTradingStrategy:'tradingStrategy',lTradingStrategyDesc:'tradingStrategyDesc',oLongterm:'strategyLongterm',oScalp:'strategyScalp',lStopLoss:'stopLoss',oStopLossCustom:'custom',oStopLossOff:'stopLossOff',lStopLossCustomPct:'customPct',lStopLossDesc:'stopLossDesc',lAutoRealOverride:'autoRealOverride',lAutoRealOverrideDesc:'autoRealOverrideDesc',lMaxOrder:'maxOrder',oMaxUnlimited:'maxOrderUnlimited',oMaxCustom:'custom',lMaxOrderCustomAmt:'customAmt',lMaxOrderDesc:'maxOrderDesc',lDelay:'delayBefore',lDelayScalpNote:'delayScalpNote',lQueuedTrades:'queuedTrades',lAutoLog:'autoLog',lExcludeTitle:'excludeTitle'};
   Object.entries(am).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   const maxRisk=currentUser?.plan==='platinum'?100:50;
   const lrl=document.getElementById('lRiskLevel');if(lrl)lrl.textContent=t('riskLevel').replace('{m}',maxRisk);
   const riskSlider=document.getElementById('autoRisk');
   if(riskSlider){riskSlider.max=maxRisk;if(parseInt(riskSlider.value)>maxRisk)riskSlider.value=maxRisk;}
-  const r=appSettings.auto_risk_pct||25,d=appSettings.auto_delay_min||5;
+  const r=appSettings.auto_risk_pct||25,d=effectiveDelayMin();
   const adesc=document.getElementById('autoDesc');if(adesc)adesc.innerHTML=t('autoDesc').replace('{r}',r).replace('{d}',d);
   // Settings labels
   const sm={lSigSens:'sigSens',lMinStrength:'minStrength',lMinMove:'minMove',lDefAmount:'defAmount',lQuickPreset:'quickPreset',lCustomAmt:'customAmt',lWatchlistDesc:'watchlistDesc',lCustomCoinsTitle:'customCoinsTitle',lCustomCoinsDesc:'customCoinsDesc'};
@@ -1124,7 +1125,7 @@ function updateRiskDisplay(v){
   const d=document.getElementById('riskDisplay');if(d){d.textContent=v+'%';d.style.color=color;}
   const slider=document.getElementById('autoRisk');if(slider)slider.style.accentColor=color;
   const adesc=document.getElementById('autoDesc');
-  if(adesc)adesc.innerHTML=t('autoDesc').replace('{r}',v).replace('{d}',appSettings.auto_delay_min||5);
+  if(adesc)adesc.innerHTML=t('autoDesc').replace('{r}',v).replace('{d}',effectiveDelayMin());
 }
 // Risk above 75% moves a much larger share of the portfolio per signal —
 // require an explicit, informed confirmation before it can be set at all.
@@ -1234,13 +1235,23 @@ function renderWatchlistDisplay(){
 }
 
 // ── AUTO NOTICE ──────────────────────────────────────────────
+// Mirrors the backend's autoTradeEngine.js SCALP_DELAY_MIN — scalp always
+// confirms on a short fixed delay, never the user's Long-term auto_delay_min
+// setting (see strategyFor/processUserAutoTrade there). Long-term and Scalp
+// are different strategies with different timing, not the same delay
+// applied to two coin lists — every place in this UI that states "signals
+// execute after N min" needs to reflect whichever one is actually running.
+const SCALP_DELAY_MIN=2;
+function effectiveDelayMin(){
+  return appSettings.trading_strategy==='scalp'?SCALP_DELAY_MIN:(appSettings.auto_delay_min||5);
+}
 function updateAutoNotice(){
   const notice=document.getElementById('autoNotice');
   const ntxt=document.getElementById('autoNoticeTxt');
   if(!notice)return;
   const isOn=appSettings.auto_trade_enabled===true;
   notice.style.display=isOn?'flex':'none';
-  if(ntxt&&isOn)ntxt.textContent=`${t('autoOn')} ${appSettings.auto_delay_min||5} ${t('minDelay')}`;
+  if(ntxt&&isOn)ntxt.textContent=`${t('autoOn')} ${effectiveDelayMin()} ${t('minDelay')}`;
 }
 
 // ── TECHNICAL ANALYSIS ───────────────────────────────────────
@@ -2162,7 +2173,16 @@ function renderAutoTab(){
   }
   const stopLossRow=document.getElementById('rowScalpStopLoss');if(stopLossRow)stopLossRow.style.opacity=appSettings.trading_strategy==='scalp'?'1':'0.5';
   updateRiskDisplay(appSettings.auto_risk_pct||25);
-  const delay=document.getElementById('autoDelay');if(delay)delay.value=appSettings.auto_delay_min||5;
+  // The delay-before-execute setting only ever applies to Long-term auto-
+  // trade — Scalp always confirms on its own fixed SCALP_DELAY_MIN instead
+  // (see effectiveDelayMin). Disable and dim it for Scalp rather than just
+  // leaving it editable but silently ignored, which used to make it look
+  // like adjusting it would change scalp's execution timing.
+  const isScalp=appSettings.trading_strategy==='scalp';
+  const delay=document.getElementById('autoDelay');
+  if(delay){delay.value=appSettings.auto_delay_min||5;delay.disabled=isScalp;}
+  const delayRow=document.getElementById('rowDelay');if(delayRow)delayRow.style.opacity=isScalp?'0.5':'1';
+  const delayNote=document.getElementById('lDelayScalpNote');if(delayNote)delayNote.style.display=isScalp?'block':'none';
   const qEl=document.getElementById('autoQueue');
   if(qEl)qEl.innerHTML=!autoQueue.length?`<div class="empty-state">${t('noQueue')}</div>`:autoQueue.map(q=>{const coin=COINS.find(c=>c.id===q.coin_id);const mins=Math.max(0,Math.round((q.execute_at-Date.now())/60000));return`<div class="auto-queue-item"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;font-weight:500">${coin?.name||q.coin_id}</span><span class="signal-badge ${q.signal_type==='BUY'?'badge-buy':'badge-sell'}">${q.signal_strength} ${q.signal_type}</span></div><div style="font-size:11px;color:var(--blue-text);margin-top:4px">${t('queued')} ${curSym()}${q.price_at_signal?.toFixed(2)||'—'} · ${t('executesIn')} ~${mins} ${t('minDelay')}</div></div>`;}).join('');
   const logEl=document.getElementById('autoLog'),logs=tradesHistory.filter(tr=>tr.is_auto);
