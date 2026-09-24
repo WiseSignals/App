@@ -13,6 +13,7 @@
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -128,6 +129,16 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
 .toast.green{background:var(--green)}
 .toast.red{background:var(--red)}
 .toast.amber{background:var(--amber)}
+/* Win celebration — fixed to the top so it's visible regardless of which
+   tab the user is on when a trade closes profitably (manual or, more
+   often, auto-trade closing in the background between polls). Separate
+   from #toast above since it carries an emoji + two lines and needs its
+   own slide animation, not the plain fade the generic toast uses. */
+.win-toast{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:50%;transform:translateX(-50%) translateY(-30px);background:var(--bg-primary);border:0.5px solid var(--green);box-shadow:0 8px 24px -8px rgba(0,0,0,0.25);border-radius:var(--radius-lg);padding:10px 16px;display:flex;align-items:center;gap:10px;z-index:1000;opacity:0;pointer-events:none;transition:opacity .3s,transform .35s cubic-bezier(.2,.9,.3,1.3);max-width:92vw}
+.win-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.win-toast .wt-emoji{font-size:20px;flex-shrink:0}
+.win-toast .wt-title{font-size:12px;font-weight:600;color:var(--text-primary)}
+.win-toast .wt-sub{font-size:11px;color:var(--text-secondary);margin-top:1px}
 .terms-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2000;display:flex;align-items:center;justify-content:center;padding:1rem}
 .terms-modal{background:var(--bg-primary);border-radius:var(--radius-lg);max-width:480px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
 .terms-header{padding:1.25rem 1.25rem 0.75rem;border-bottom:0.5px solid var(--border)}
@@ -393,6 +404,7 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
   </div>
 </div>
 <div id="toast" class="toast"></div>
+<div id="winToast" class="win-toast"><span class="wt-emoji">🎉</span><div><div class="wt-title" id="wtTitle"></div><div class="wt-sub" id="wtSub"></div></div></div>
 <div id="termsOverlay" class="terms-overlay" style="display:none">
   <div class="terms-modal">
     <div class="terms-header"><h2 id="termsTitle">Risk Disclosure &amp; Terms of Use</h2></div>
@@ -532,6 +544,7 @@ en:{
   tradesTaken:'Trades taken',inPositions:'In positions',openPositions:'Open positions',
   noPositions:'No open positions yet.',closedTrades:'Closed trades',noTrades:'No closed trades yet.\nAccept a signal to start.',
   historyDesc:'Completed trade cycles only — a buy followed by its matching sell, with the realized profit or loss (manual or auto). Currently open positions aren\'t closed yet, so they show in Portfolio instead.',
+  tradeClosedWin:'Trade closed',
   yesterday:'Yesterday',thisWeek:'This Week',thisMonth:'This Month',allTime:'All Time',
   bestTrade:'Best trade',worstTrade:'Worst trade',avgPerTrade:'Avg per trade',feesPaid:'Fees paid',
   trades:'trades',wins:'wins',losses:'losses',noTradesPeriod:'No trades in this period.',
@@ -616,6 +629,7 @@ fa:{
   tradesTaken:'معاملات انجام شده',inPositions:'در موقعیت‌ها',openPositions:'موقعیت‌های باز',
   noPositions:'هنوز موقعیت بازی ندارید.',closedTrades:'معاملات بسته شده',noTrades:'هنوز معامله‌ای بسته نشده.\nیک سیگنال را تأیید کنید.',
   historyDesc:'فقط چرخه‌های کامل‌شده معامله — یک خرید به همراه فروش متناظرش، با سود یا زیان تحقق‌یافته (دستی یا خودکار). موقعیت‌های بازِ فعلی هنوز بسته نشده‌اند، پس در تب پورتفولیو نمایش داده می‌شوند.',
+  tradeClosedWin:'معامله بسته شد',
   yesterday:'دیروز',thisWeek:'این هفته',thisMonth:'این ماه',allTime:'همه زمان‌ها',
   bestTrade:'بهترین معامله',worstTrade:'بدترین معامله',avgPerTrade:'میانگین هر معامله',feesPaid:'کارمزد پرداختی',
   trades:'معامله',wins:'برد',losses:'باخت',noTradesPeriod:'در این دوره معامله‌ای نبود.',
@@ -700,6 +714,7 @@ es:{
   tradesTaken:'Operaciones',inPositions:'En posiciones',openPositions:'Posiciones abiertas',
   noPositions:'Sin posiciones abiertas.',closedTrades:'Operaciones cerradas',noTrades:'Sin operaciones cerradas.\nAcepta una señal para empezar.',
   historyDesc:'Solo ciclos de operación completados — una compra seguida de su venta correspondiente, con la ganancia o pérdida realizada (manual o automática). Las posiciones abiertas actuales aún no están cerradas, así que se muestran en Portafolio.',
+  tradeClosedWin:'Operación cerrada',
   yesterday:'Ayer',thisWeek:'Esta semana',thisMonth:'Este mes',allTime:'Todo el tiempo',
   bestTrade:'Mejor operación',worstTrade:'Peor operación',avgPerTrade:'Promedio/operación',feesPaid:'Comisiones',
   trades:'operaciones',wins:'victorias',losses:'pérdidas',noTradesPeriod:'Sin operaciones en este período.',
@@ -1372,6 +1387,27 @@ async function refreshPortfolio(){
     (data.positions||[]).forEach(p=>{portfolioPositions[p.coin_id]=p;});
   }catch(e){console.error('portfolio fetch failed',e);}
 }
+// Tracks which closed-trade ids have already been seen, per mode (paper
+// and real are tracked separately so switching modes for the first time
+// doesn't make that mode's whole history look "new" and fire a flood of
+// celebrations). null means "not yet seeded" — the very first fetch in a
+// mode just records every id it sees without celebrating any of them,
+// since those are pre-existing trades, not ones that just happened.
+let seenTradeIds={paper:null,real:null};
+let winToastTimer=null;
+function celebrateWin(trade){
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const coin=COINS.find(c=>c.id===trade.coin_id);
+  const name=coin?coin.name:(trade.coin_symbol||trade.coin_id);
+  const pct=trade.amount_usd?(trade.pnl/trade.amount_usd*100):null;
+  const title=document.getElementById('wtTitle'),sub=document.getElementById('wtSub'),el=document.getElementById('winToast');
+  if(title)title.textContent=t('tradeClosedWin');
+  if(sub)sub.textContent=`${name} +${curSym()}${trade.pnl.toFixed(2)}${pct!=null?` (+${pct.toFixed(1)}%)`:''}`;
+  if(el){el.classList.add('show');clearTimeout(winToastTimer);winToastTimer=setTimeout(()=>el.classList.remove('show'),3200);}
+  if(typeof confetti==='function'){
+    confetti({particleCount:70,spread:65,startVelocity:32,origin:{y:0},colors:['#1D9E75','#5DCAA5','#BA7517','#FAC775']});
+  }
+}
 async function refreshTrades(){
   // Mirrors the Paper/Real split used everywhere else in the app (Portfolio,
   // the Signals tab's holding line) rather than merging both — real trade
@@ -1379,8 +1415,16 @@ async function refreshTrades(){
   // (server-side, /api/real/trades), which needs no live Kraken call so
   // there's no active-key dependency to worry about here, only the mode.
   try{
-    const data=tradingMode==='real'?await apiFetch('/api/real/trades'):await apiFetch('/api/trades?limit=200');
-    tradesHistory=data.trades||[];
+    const mode=tradingMode==='real'?'real':'paper';
+    const data=mode==='real'?await apiFetch('/api/real/trades'):await apiFetch('/api/trades?limit=200');
+    const newTrades=data.trades||[];
+    if(seenTradeIds[mode]===null){
+      seenTradeIds[mode]=new Set(newTrades.map(x=>x.id));
+    }else{
+      newTrades.filter(x=>x.pnl>0&&!seenTradeIds[mode].has(x.id)).forEach(x=>{seenTradeIds[mode].add(x.id);celebrateWin(x);});
+      newTrades.forEach(x=>seenTradeIds[mode].add(x.id));
+    }
+    tradesHistory=newTrades;
   }catch(e){console.error('trades fetch failed',e);}
 }
 async function refreshAutoQueue(){
@@ -2259,6 +2303,12 @@ async function fetchData(){
     const now=new Date();
     document.getElementById('lastUpdate').textContent=`${t('updated')} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
     document.getElementById('timerFill').style.width='100%';countdown=180;
+    // Fire-and-forget: catches auto-trade closing a winning position in the
+    // background (not just manual sells, which already refresh trades
+    // themselves) so the win celebration fires even while sitting on the
+    // Signals tab. Has its own try/catch, so a failure here can't break
+    // price rendering above.
+    refreshTrades();
   }catch(e){
     console.error('fetchData failed:',e);
     const eb=document.getElementById('errorBanner');eb.style.display='block';eb.textContent=`⚠️ ${t('loadPricesError')}${e.message?': '+e.message:''}`;
