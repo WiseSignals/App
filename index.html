@@ -425,12 +425,32 @@ async function refreshFxRate(){
   }catch(e){fxRate=1;fxRates=null;}
 }
 function getToken(){return localStorage.getItem('ks_token');}
+// A handful of backend endpoints (fx-rates, chart, prices) can end up
+// waiting behind CoinGecko's shared rate-limit queue (coingeckoThrottle.js)
+// under load — without a timeout, fetch() here would just hang for as long
+// as that takes, which on a busy queue could be a long time, and init()
+// awaits several of these in sequence before the page shows anything. A
+// bounded timeout turns "page never finishes loading" into a clear error
+// instead, at the cost of an occasional false timeout on a genuinely slow
+// (but working) request.
+const FETCH_TIMEOUT_MS=20000;
 async function apiFetch(path,options={}){
   const token=getToken();
-  const res=await fetch(API_BASE+path,{
-    ...options,
-    headers:{'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{}),...(options.headers||{})}
-  });
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),FETCH_TIMEOUT_MS);
+  let res;
+  try{
+    res=await fetch(API_BASE+path,{
+      ...options,
+      signal:controller.signal,
+      headers:{'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{}),...(options.headers||{})}
+    });
+  }catch(e){
+    if(e.name==='AbortError')throw new Error('Request timed out — the server is taking longer than usual, try again');
+    throw e;
+  }finally{
+    clearTimeout(timer);
+  }
   if(res.status===401){localStorage.removeItem('ks_token');window.location.href='login.html';throw new Error('Unauthorized');}
   const data=await res.json().catch(()=>({}));
   if(!res.ok)throw new Error(data.error||'Request failed');
