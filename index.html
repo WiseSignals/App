@@ -2245,23 +2245,37 @@ async function submitTermsAcceptance(){
 
 // ── INIT ─────────────────────────────────────────────────────
 (async function init(){
-  await loadUser();
-  if(!currentUser)return; // loadUser() already redirected to login.html
-  // trading_mode is server-authoritative (it governs auto-trade too, which
-  // runs server-side with no idea what's in this browser's localStorage) —
-  // localStorage was only ever a fast-paint guess before this responds.
-  tradingMode=currentUser.trading_mode||'paper';
-  try{localStorage.setItem('ks_mode',tradingMode);}catch(e){}
-  renderModeBadge();
-  await maybeShowTermsGate();
-  await refreshFxRate();
-  loadAppSettings();loadSettings();applyLanguage();
-  showTab('signals');
-  await refreshPortfolio();await refreshTrades();await refreshAutoQueue();
-  await renderApiKeys(); // populates hasActiveKrakenKey so the Real toggle is correct from first load
-  renderPortfolioModeToggle();
-  if(tradingMode==='real'){await refreshRealPortfolio();await refreshRealOrders();renderRealPortfolioView();}
-  await fetchData();startTimer();
+  try{
+    await loadUser();
+    if(!currentUser)return; // loadUser() already redirected to login.html
+    // trading_mode is server-authoritative (it governs auto-trade too, which
+    // runs server-side with no idea what's in this browser's localStorage) —
+    // localStorage was only ever a fast-paint guess before this responds.
+    tradingMode=currentUser.trading_mode||'paper';
+    try{localStorage.setItem('ks_mode',tradingMode);}catch(e){}
+    renderModeBadge();
+    await maybeShowTermsGate();
+    await refreshFxRate();
+    loadAppSettings();loadSettings();applyLanguage();
+    showTab('signals');
+    await refreshPortfolio();await refreshTrades();await refreshAutoQueue();
+    await renderApiKeys(); // populates hasActiveKrakenKey so the Real toggle is correct from first load
+    renderPortfolioModeToggle();
+    if(tradingMode==='real'){await refreshRealPortfolio();await refreshRealOrders();renderRealPortfolioView();}
+    await fetchData();startTimer();
+  }catch(e){
+    // Every step above already has its own try/catch except this outer
+    // sequence itself — before this, an unexpected throw anywhere in it
+    // (a bug, a truly stuck request past the apiFetch timeout, anything)
+    // left the page silently stuck on the static "Loading..." placeholder
+    // forever, with nothing in the UI to show something had gone wrong.
+    // This is a last-resort safety net, not a substitute for fixing the
+    // actual cause if this ever fires — it exists so a real failure is at
+    // least visible and recoverable instead of an unexplained infinite hang.
+    console.error('App failed to load:', e);
+    const list=document.getElementById('coinList');
+    if(list)list.innerHTML=`<div class="empty-state" style="color:var(--red-text)">Something went wrong loading the app${e&&e.message?': '+e.message:''}.<br><button onclick="location.reload()" style="margin-top:10px;padding:8px 16px;border-radius:var(--radius-md);border:0.5px solid var(--red);background:var(--red-bg);color:var(--red-text);cursor:pointer">Reload</button></div>`;
+  }
 })();
 </script>
 </body>
