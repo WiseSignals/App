@@ -1347,8 +1347,13 @@ async function refreshPortfolio(){
   }catch(e){console.error('portfolio fetch failed',e);}
 }
 async function refreshTrades(){
+  // Mirrors the Paper/Real split used everywhere else in the app (Portfolio,
+  // the Signals tab's holding line) rather than merging both — real trade
+  // history comes from reconstructing closed trades out of real_orders
+  // (server-side, /api/real/trades), which needs no live Kraken call so
+  // there's no active-key dependency to worry about here, only the mode.
   try{
-    const data=await apiFetch('/api/trades?limit=200');
+    const data=tradingMode==='real'?await apiFetch('/api/real/trades'):await apiFetch('/api/trades?limit=200');
     tradesHistory=data.trades||[];
   }catch(e){console.error('trades fetch failed',e);}
 }
