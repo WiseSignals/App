@@ -1291,6 +1291,16 @@ async function analyzeReal(coinId,price,change,high,low){
   const prices=[...hist.prices.map(cv),cp];
   const rsi=calcRSI(prices,14),ma7=calcMA(prices,7),ma25=calcMA(prices,25),volRatio=calcVolRatio(hist.volumes);
   const rv=rsi!==null?rsi:50;
+  // Scalp mode's move-size figure: 14-HOUR change (the same window RSI(14)
+  // draws from), not the 24h `change` passed in — mirrors the backend fix
+  // in priceService.analyzeSignalScalp. Using 24h here used to let a stale
+  // move from earlier in the day (outside the actual RSI window) inflate or
+  // hide a coin's score independently of what its last-14-hour price action
+  // actually looked like. Falls back to 24h change if there isn't 14 hourly
+  // points of history yet.
+  const histConverted=hist.prices.map(cv);
+  const base14=strategy==='scalp'?histConverted[histConverted.length-14]:null;
+  if(strategy==='scalp'&&base14)change=((cp-base14)/base14)*100;
   // ma7/ma25 are computed from the currency-converted `prices` series above —
   // comparing the raw (USD) `price` param against them mixed scales for any
   // non-USD account (e.g. a CAD price is always numerically smaller than a
