@@ -221,8 +221,13 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
       <div class="setting-row" id="rowScalpStopLoss"><span class="setting-label" id="lStopLoss"></span>
         <select id="autoStopLoss" onchange="onAutoStopLossChange(this)">
           <option value="3">3%</option><option value="5">5%</option><option value="7">7%</option><option value="10">10%</option><option value="15">15%</option>
+          <option value="custom" id="oStopLossCustom"></option>
           <option value="0" id="oStopLossOff"></option>
         </select>
+      </div>
+      <div class="setting-row" id="rowStopLossCustom" style="display:none">
+        <span class="setting-label" id="lStopLossCustomPct"></span>
+        <input type="number" id="autoStopLossCustom" min="3" max="15" step="0.5" placeholder="8" style="width:80px" onchange="onAutoStopLossCustomChange(this)">
       </div>
       <div id="lStopLossDesc" style="font-size:11px;color:var(--text-tertiary);margin:-4px 0 8px;line-height:1.5"></div>
       <div class="setting-row" id="rowAutoRealOverride"><span class="setting-label" id="lAutoRealOverride"></span><input type="checkbox" id="autoRealOverride" onchange="onAutoRealOverrideChange(this)" style="width:18px;height:18px;cursor:pointer"></div>
@@ -494,7 +499,7 @@ en:{
   refresh:'Refresh',loading:'Loading live prices...',updated:'Updated',loadPricesError:'Could not load prices',
   buy:'Buy',sell:'Sell',hold:'Hold',autoQueued:'Auto queued',
   strongBuy:'Strong BUY',moderateBuy:'Moderate BUY',strongSell:'Strong SELL',moderateSell:'Moderate SELL',
-  yourPosition:'Your position',entry:'Entry',now:'Now',invested:'Invested',pnl:'P&L',
+  yourPosition:'Your position',entry:'Entry',avgEntry:'Avg entry',now:'Now',invested:'Invested',pnl:'P&L',
   rsi:'RSI (14)',ma7:'MA7',ma25:'MA25',volRatio:'Volume ratio',high24:'24h High',low24:'24h Low',rank:'Market cap rank',
   totalValue:'Total value',totalPnl:'Total P&L',cashAvailable:'Cash available',winRate:'Win rate',
   tradesTaken:'Trades taken',inPositions:'In positions',openPositions:'Open positions',
@@ -512,6 +517,7 @@ en:{
   stopLoss:'Scalp stop-loss',stopLossOff:'Off',
   stopLossDesc:'Scalp mode only. If a scalp position drops this much below where auto-trade bought it, it sells immediately regardless of signal — the only automatic exit for a coin that just keeps falling without ever getting overbought again. Off removes that safety net entirely; not recommended, since a coin swinging ±10% in a day can lose far more than a stop-loss would have taken.',
   stopLossOffWarning:'Turning the stop-loss off means a losing scalp position has no automatic exit at all — it will keep being held no matter how far it drops, until a Strong Sell signal fires (which may never happen if the coin just keeps falling). This is not recommended. Turn it off anyway?',
+  customPct:'Custom (%)',stopLossCustomRange:'Stop-loss must be between 3% and 15%',
   autoBlockedNote:'Auto-trade would skip this',autoBlockedConfirm:'\n\n⚠️ Auto-trade would NOT buy this coin right now (still below yesterday\'s close, or a market-wide downturn) — you would be taking on manually the exact risk that filter exists to avoid.',
   delayBefore:'Delay before execute',autoDesc:'Uses up to {r}% of portfolio as shared budget. Only Strong signals. Waits {d} min. Multiple signals split budget equally.',
   queuedTrades:'Queued auto-trades',autoLog:'Auto-trade log',noQueue:'No auto-trades queued.\nEnable auto-trade and wait for a Strong signal.',noAutoLog:'No auto-trades executed yet.',
@@ -573,7 +579,7 @@ fa:{
   refresh:'بروزرسانی',loading:'در حال بارگذاری قیمت‌ها...',updated:'بروز شد',loadPricesError:'بارگذاری قیمت‌ها ممکن نشد',
   buy:'خرید',sell:'فروش',hold:'نگه‌دار',autoQueued:'در صف اتو',
   strongBuy:'خرید قوی',moderateBuy:'خرید متوسط',strongSell:'فروش قوی',moderateSell:'فروش متوسط',
-  yourPosition:'موقعیت شما',entry:'ورود',now:'الان',invested:'سرمایه',pnl:'سود/زیان',
+  yourPosition:'موقعیت شما',entry:'ورود',avgEntry:'میانگین ورود',now:'الان',invested:'سرمایه',pnl:'سود/زیان',
   rsi:'RSI (14)',ma7:'MA7',ma25:'MA25',volRatio:'نسبت حجم',high24:'بالاترین ۲۴ساعت',low24:'پایین‌ترین ۲۴ساعت',rank:'رتبه مارکت‌کپ',
   totalValue:'ارزش کل',totalPnl:'سود/زیان کل',cashAvailable:'موجودی نقد',winRate:'نرخ موفقیت',
   tradesTaken:'معاملات انجام شده',inPositions:'در موقعیت‌ها',openPositions:'موقعیت‌های باز',
@@ -591,6 +597,7 @@ fa:{
   stopLoss:'حد ضرر نوسان‌گیری',stopLossOff:'خاموش',
   stopLossDesc:'فقط برای حالت نوسان‌گیری. اگر یک موقعیت نوسان‌گیری به این اندازه از قیمت خریدش پایین‌تر برود، بدون توجه به سیگنال بلافاصله فروخته می‌شود — تنها راه خروج خودکار برای کوینی که فقط افت می‌کند و دیگر هرگز اشباع خرید نمی‌شود. خاموش کردن این حفاظ را کاملاً حذف می‌کند؛ توصیه نمی‌شود، چون کوینی که روزانه ±۱۰٪ نوسان دارد می‌تواند خیلی بیشتر از حد ضرر از دست بدهد.',
   stopLossOffWarning:'خاموش کردن حد ضرر یعنی یک موقعیت زیان‌ده در نوسان‌گیری هیچ خروج خودکاری نخواهد داشت — تا زمانی که سیگنال فروش قوی صادر شود (که ممکن است هرگز رخ ندهد اگر کوین فقط افت کند) نگه‌داشته می‌شود. این توصیه نمی‌شود. با این حال خاموش شود؟',
+  customPct:'دلخواه (٪)',stopLossCustomRange:'حد ضرر باید بین ۳٪ تا ۱۵٪ باشد',
   autoBlockedNote:'اتوتریدر این را رد می‌کند',autoBlockedConfirm:'\n\n⚠️ اتوتریدر الان این کوین را نمی‌خرد (هنوز پایین‌تر از قیمت بسته‌شدن دیروز است، یا افت کلی بازار) — با خرید دستی همان ریسکی را می‌پذیرید که این فیلتر برای جلوگیری از آن طراحی شده.',
   delayBefore:'تأخیر قبل از اجرا',autoDesc:'حداکثر {r}٪ از پورتفولیو به عنوان بودجه مشترک. فقط سیگنال‌های قوی. {d} دقیقه تأخیر. چند سیگنال همزمان بودجه را تقسیم می‌کنند.',
   queuedTrades:'معاملات در صف',autoLog:'لاگ معاملات اتوماتیک',noQueue:'معامله‌ای در صف نیست.\nاتوتریدر را روشن کنید و منتظر سیگنال قوی باشید.',noAutoLog:'هنوز معامله اتوماتیکی اجرا نشده.',
@@ -652,7 +659,7 @@ es:{
   refresh:'Actualizar',loading:'Cargando precios...',updated:'Actualizado',loadPricesError:'No se pudieron cargar los precios',
   buy:'Comprar',sell:'Vender',hold:'Mantener',autoQueued:'Auto en cola',
   strongBuy:'Compra Fuerte',moderateBuy:'Compra Moderada',strongSell:'Venta Fuerte',moderateSell:'Venta Moderada',
-  yourPosition:'Tu posición',entry:'Entrada',now:'Ahora',invested:'Invertido',pnl:'G/P',
+  yourPosition:'Tu posición',entry:'Entrada',avgEntry:'Entrada prom.',now:'Ahora',invested:'Invertido',pnl:'G/P',
   rsi:'RSI (14)',ma7:'MA7',ma25:'MA25',volRatio:'Ratio de volumen',high24:'Máx 24h',low24:'Mín 24h',rank:'Ranking market cap',
   totalValue:'Valor total',totalPnl:'G/P total',cashAvailable:'Efectivo disponible',winRate:'Tasa de éxito',
   tradesTaken:'Operaciones',inPositions:'En posiciones',openPositions:'Posiciones abiertas',
@@ -670,6 +677,7 @@ es:{
   stopLoss:'Stop-loss de scalping',stopLossOff:'Desactivado',
   stopLossDesc:'Solo modo Scalping. Si una posición de scalping cae este porcentaje por debajo de donde auto-trade la compró, se vende de inmediato sin importar la señal — la única salida automática para una moneda que sigue cayendo sin volver a sobrecompra. Desactivado elimina esa red de seguridad por completo; no recomendado, ya que una moneda que oscila ±10% en un día puede perder mucho más de lo que un stop-loss habría evitado.',
   stopLossOffWarning:'Desactivar el stop-loss significa que una posición de scalping en pérdida no tendrá ninguna salida automática — se mantendrá sin importar cuánto caiga, hasta que se dispare una señal de Venta Fuerte (que puede no ocurrir nunca si la moneda solo sigue cayendo). No se recomienda. ¿Desactivar de todas formas?',
+  customPct:'Personalizado (%)',stopLossCustomRange:'El stop-loss debe estar entre 3% y 15%',
   autoBlockedNote:'Auto-trade omitiría esto',autoBlockedConfirm:'\n\n⚠️ Auto-trade NO compraría esta moneda ahora mismo (todavía por debajo del cierre de ayer, o una caída general del mercado) — estarías asumiendo manualmente exactamente el riesgo que ese filtro existe para evitar.',
   delayBefore:'Retraso antes de ejecutar',autoDesc:'Usa hasta {r}% del portafolio como presupuesto compartido. Solo señales Fuertes. Espera {d} min. Múltiples señales dividen el presupuesto.',
   queuedTrades:'Auto-trades en cola',autoLog:'Registro auto-trade',noQueue:'Sin auto-trades en cola.\nActiva auto-trade y espera una señal Fuerte.',noAutoLog:'Sin auto-trades ejecutados.',
@@ -758,7 +766,7 @@ function applyLanguage(){
   Object.entries(ptm).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   const lct=document.getElementById('lClosedTrades');if(lct)lct.textContent=t('closedTrades');
   // Auto tab
-  const am={lAutoTitle:'autoTitle',lAutoEnabled:'autoEnabled',lTradingStrategy:'tradingStrategy',lTradingStrategyDesc:'tradingStrategyDesc',oLongterm:'strategyLongterm',oScalp:'strategyScalp',lStopLoss:'stopLoss',oStopLossOff:'stopLossOff',lStopLossDesc:'stopLossDesc',lAutoRealOverride:'autoRealOverride',lAutoRealOverrideDesc:'autoRealOverrideDesc',lMaxOrder:'maxOrder',oMaxUnlimited:'maxOrderUnlimited',oMaxCustom:'custom',lMaxOrderCustomAmt:'customAmt',lMaxOrderDesc:'maxOrderDesc',lDelay:'delayBefore',lQueuedTrades:'queuedTrades',lAutoLog:'autoLog',lExcludeTitle:'excludeTitle'};
+  const am={lAutoTitle:'autoTitle',lAutoEnabled:'autoEnabled',lTradingStrategy:'tradingStrategy',lTradingStrategyDesc:'tradingStrategyDesc',oLongterm:'strategyLongterm',oScalp:'strategyScalp',lStopLoss:'stopLoss',oStopLossCustom:'custom',oStopLossOff:'stopLossOff',lStopLossCustomPct:'customPct',lStopLossDesc:'stopLossDesc',lAutoRealOverride:'autoRealOverride',lAutoRealOverrideDesc:'autoRealOverrideDesc',lMaxOrder:'maxOrder',oMaxUnlimited:'maxOrderUnlimited',oMaxCustom:'custom',lMaxOrderCustomAmt:'customAmt',lMaxOrderDesc:'maxOrderDesc',lDelay:'delayBefore',lQueuedTrades:'queuedTrades',lAutoLog:'autoLog',lExcludeTitle:'excludeTitle'};
   Object.entries(am).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   const maxRisk=currentUser?.plan==='platinum'?100:50;
   const lrl=document.getElementById('lRiskLevel');if(lrl)lrl.textContent=t('riskLevel').replace('{m}',maxRisk);
@@ -1122,12 +1130,24 @@ function onAutoMaxOrderCustomChange(el){
 // position has if it just keeps bleeding down without ever getting
 // overbought again — confirm explicitly, same pattern as this app's other
 // risky-setting changes (e.g. risk >75%, switching auto-trade real).
+function stopLossSelectValue(){
+  const v=appSettings.auto_stop_loss_pct!=null?appSettings.auto_stop_loss_pct:3;
+  return [3,5,7,10,15,0].includes(v)?String(v):'custom';
+}
 function onAutoStopLossChange(el){
+  const row=document.getElementById('rowStopLossCustom');
+  if(el.value==='custom'){if(row)row.style.display='flex';return;}
+  if(row)row.style.display='none';
   if(el.value==='0'&&!confirm(t('stopLossOffWarning'))){
-    el.value=appSettings.auto_stop_loss_pct||3;
+    el.value=stopLossSelectValue();
     return;
   }
   saveSetting('autoStopLoss',el.value);
+}
+function onAutoStopLossCustomChange(el){
+  const v=parseFloat(el.value);
+  if(isNaN(v)||v<3||v>15){showToast(t('stopLossCustomRange'),'red');return;}
+  saveSetting('autoStopLoss',v);
 }
 
 // ── WATCHLIST ────────────────────────────────────────────────
@@ -1709,8 +1729,20 @@ async function renderCoins(data){
     const price=dispPrice>=1000?dispPrice.toLocaleString('en-US',{maximumFractionDigits:0}):dispPrice>=1?dispPrice.toFixed(2):dispPrice.toFixed(4);
     const posData=hasPos?getHeldPosition(coin.id):null;
     const posVal=hasPos?posData.units*cv(d.current_price):0;
-    // Real Kraken positions have no cost basis, so P&L isn't computable — null signals "not tracked" rather than 0.
-    const posPnl=hasPos&&!isRealMode?posVal-posData.entry_amount:null;
+    // Paper always has a cost basis (portfolio.entry_price, weighted-averaged
+    // on every buy). Real Kraken positions have none natively — the backend
+    // reconstructs an approximate one from this app's own real_orders history
+    // (posData.entryPrice, already in display currency) when that history
+    // exists; null means it genuinely doesn't (e.g. the coin was already in
+    // the Kraken account before ever trading it through this app), in which
+    // case P&L truly isn't computable rather than just unknown-and-assumed-0.
+    const posEntryPrice=hasPos?(isRealMode?posData.entryPrice:posData.entry_price):null;
+    // Paper keeps its own exact stored entry_amount (avoids reintroducing
+    // floating-point drift vs. deriving it back from entry_price*units);
+    // real mode has no such stored total, so it's derived from the
+    // reconstructed entry price instead.
+    const posEntryAmount=hasPos?(isRealMode?(posEntryPrice!=null?posEntryPrice*posData.units:null):posData.entry_amount):null;
+    const posPnl=(hasPos&&posEntryAmount!=null)?posVal-posEntryAmount:null;
     let livePnl='';
     if(hasPos&&posPnl!==null){livePnl=`<div class="live-pnl${posPnl<0?' neg':''}">${posPnl>=0?'+':''}${curSym()}${posPnl.toFixed(2)}</div>`;}
     const defAmt=selectedAmounts[coin.id]||getDefaultAmount(portfolioBalance);
@@ -1840,11 +1872,11 @@ async function renderCoins(data){
       <div class="detail-panel" id="dp-${coin.id}">
         ${hasPos?(posPnl!==null?`<div style="background:var(--green-bg);border-radius:var(--radius-md);padding:8px 10px;margin-bottom:8px;border:0.5px solid var(--green)">
           <div style="display:flex;justify-content:space-between;align-items:baseline">
-            <span style="font-size:12px;font-weight:600;color:var(--green-text)">${t('yourPosition')}</span>
-            <span style="font-size:15px;font-weight:700;color:var(--green-text)">${curSym()}${posVal.toFixed(2)} <span style="font-size:12px">(${posPnl>=0?'+':''}${(posPnl/posData.entry_amount*100).toFixed(2)}%)</span></span>
+            <span style="font-size:12px;font-weight:600;color:var(--green-text)">${t('yourPosition')}${isRealMode?` <span style="font-weight:400">(Kraken${(posData.is_auto||posData.isAuto)?' <i class="ti ti-robot"></i>':''})</span>`:''}</span>
+            <span style="font-size:15px;font-weight:700;color:var(--green-text)">${curSym()}${posVal.toFixed(2)} <span style="font-size:12px">(${posPnl>=0?'+':''}${(posPnl/posEntryAmount*100).toFixed(2)}%)</span></span>
           </div>
-          <div style="font-size:11px;color:var(--green-text);margin-top:3px">${posData.units.toFixed(6)} ${coin.symbol} · ${t('entry')} ${curSym()}${posData.entry_price.toFixed(2)} · ${t('pnl')} <strong>${posPnl>=0?'+':''}${curSym()}${posPnl.toFixed(2)}</strong></div>
-          <div style="font-size:11px;color:var(--green-text);margin-top:1px">${t('invested')} ${curSym()}${posData.entry_amount.toFixed(2)} · ${t('now')} ${curSym()}${dispPrice>=1?dispPrice.toFixed(2):dispPrice.toFixed(4)}</div>
+          <div style="font-size:11px;color:var(--green-text);margin-top:3px">${posData.units.toFixed(6)} ${coin.symbol} · ${t('avgEntry')} ${curSym()}${posEntryPrice.toFixed(2)} · ${t('pnl')} <strong>${posPnl>=0?'+':''}${curSym()}${posPnl.toFixed(2)}</strong></div>
+          <div style="font-size:11px;color:var(--green-text);margin-top:1px">${t('invested')} ${curSym()}${posEntryAmount.toFixed(2)} · ${t('now')} ${curSym()}${dispPrice>=1?dispPrice.toFixed(2):dispPrice.toFixed(4)}</div>
         </div>`:`<div style="background:var(--green-bg);border-radius:var(--radius-md);padding:8px 10px;margin-bottom:8px;border:0.5px solid var(--green)">
           <div style="display:flex;justify-content:space-between;align-items:baseline">
             <span style="font-size:12px;font-weight:600;color:var(--green-text)">${t('yourPosition')} <span style="font-weight:400">(Kraken)</span></span>
@@ -2005,7 +2037,13 @@ function renderAutoTab(){
     if(maxOrderRow)maxOrderRow.style.display=isPreset?'none':'flex';
     if(!isPreset&&maxOrderCustom)maxOrderCustom.value=mv;
   }
-  const stopLoss=document.getElementById('autoStopLoss');if(stopLoss)stopLoss.value=String(appSettings.auto_stop_loss_pct!=null?appSettings.auto_stop_loss_pct:3);
+  const stopLoss=document.getElementById('autoStopLoss'),stopLossCustom=document.getElementById('autoStopLossCustom'),stopLossCustomRow=document.getElementById('rowStopLossCustom');
+  if(stopLoss){
+    const slVal=stopLossSelectValue();
+    stopLoss.value=slVal;
+    if(stopLossCustomRow)stopLossCustomRow.style.display=slVal==='custom'?'flex':'none';
+    if(slVal==='custom'&&stopLossCustom)stopLossCustom.value=appSettings.auto_stop_loss_pct;
+  }
   const stopLossRow=document.getElementById('rowScalpStopLoss');if(stopLossRow)stopLossRow.style.opacity=appSettings.trading_strategy==='scalp'?'1':'0.5';
   updateRiskDisplay(appSettings.auto_risk_pct||25);
   const delay=document.getElementById('autoDelay');if(delay)delay.value=appSettings.auto_delay_min||5;
