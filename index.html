@@ -1711,9 +1711,24 @@ async function renderCoins(data){
   // show a loading state instead of leaving stale/blank content on screen.
   if(!list.children.length)list.innerHTML=`<div class="empty-state">${t('loading')}</div>`;
   const sigCache={};
+  // One coin's analyzeReal throwing (a malformed price field, a fetch that
+  // rejects in a way its own try/catch didn't anticipate, anything) used to
+  // reject this whole Promise.all — and since renderCoins() is called from
+  // fetchData() without an await, that rejection became a silent unhandled
+  // promise rejection with no visible error, leaving the list stuck on the
+  // "Loading..." placeholder above forever while the rest of the page (auto
+  // notice, timestamp, Kraken data) kept updating normally. Confirmed live.
+  // Isolate each coin so one bad one can't take the whole watchlist down;
+  // fetchData's own await+catch (see there) is the second half of this fix.
   await Promise.all(COINS.map(async coin=>{
     const d=data.find(x=>x.id===coin.id);
-    if(d)sigCache[coin.id]=await analyzeReal(coin.id,d.current_price,d.price_change_percentage_24h,d.high_24h,d.low_24h);
+    if(!d)return;
+    try{
+      sigCache[coin.id]=await analyzeReal(coin.id,d.current_price,d.price_change_percentage_24h,d.high_24h,d.low_24h);
+    }catch(e){
+      console.error(`analyzeReal failed for ${coin.id}:`,e);
+      sigCache[coin.id]=analyzeFallback(d.current_price,d.price_change_percentage_24h,d.high_24h,d.low_24h);
+    }
   }));
   const sigFor=id=>sigCache[id]||analyzeFallback(0,0,0,0);
   const sorted=[...COINS].sort((a,b)=>{
@@ -2209,7 +2224,7 @@ async function fetchData(){
     lastData=data; // set before updateWatchlist() so it sees this cycle's data, not the previous one
     updateWatchlist();
     const filtered=data.filter(d=>COINS.some(c=>c.id===d.id));
-    renderCoins(filtered);
+    await renderCoins(filtered);
     const now=new Date();
     document.getElementById('lastUpdate').textContent=`${t('updated')} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
     document.getElementById('timerFill').style.width='100%';countdown=180;
