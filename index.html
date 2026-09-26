@@ -402,6 +402,58 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
       </div>
       <div id="customCoinsCount" style="font-size:11px;color:var(--text-tertiary);margin-top:6px"></div>
     </div>
+    <div class="settings-section">
+      <div class="settings-title" id="lCustomRulesTitle">Custom Rules (Platinum)</div>
+      <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:10px" id="lCustomRulesDesc">Automatically buy or sell a coin when a price or gain/loss condition is met — independent of the Strong Buy/Sell signals auto-trade uses.</div>
+      <div id="customRulesList" style="margin-bottom:8px"></div>
+      <button onclick="openAddRule()" style="width:100%;padding:9px;font-size:13px;border-radius:var(--radius-md);border:0.5px dashed var(--border-strong);background:transparent;color:var(--text-secondary);cursor:pointer" id="btnAddRule">+ Add Rule</button>
+      <div id="addRuleForm" style="display:none;margin-top:10px;background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px">
+        <div style="margin-bottom:8px">
+          <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px" id="lRuleCoin">Coin</label>
+          <select id="ruleCoin" style="width:100%;padding:8px;font-size:13px;border-radius:var(--radius-md);border:0.5px solid var(--border);background:var(--bg-primary);color:var(--text-primary)"></select>
+        </div>
+        <div style="margin-bottom:8px">
+          <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px" id="lRuleCondition">Condition</label>
+          <select id="ruleCondition" onchange="onRuleConditionChange()" style="width:100%;padding:8px;font-size:13px;border-radius:var(--radius-md);border:0.5px solid var(--border);background:var(--bg-primary);color:var(--text-primary)">
+            <option value="price_above" id="oCondPriceAbove"></option>
+            <option value="price_below" id="oCondPriceBelow"></option>
+            <option value="pct_gain_from_entry" id="oCondGainEntry"></option>
+            <option value="pct_drop_from_entry" id="oCondDropEntry"></option>
+            <option value="pct_gain_from_creation" id="oCondGainCreation"></option>
+            <option value="pct_drop_from_creation" id="oCondDropCreation"></option>
+          </select>
+        </div>
+        <div style="margin-bottom:8px">
+          <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px" id="lRuleValue">Value</label>
+          <input type="number" id="ruleValue" min="0" step="0.01" style="width:100%;padding:8px;font-size:13px;border-radius:var(--radius-md);border:0.5px solid var(--border);background:var(--bg-primary);color:var(--text-primary)">
+          <div id="lRuleValueHint" style="font-size:10px;color:var(--text-tertiary);margin-top:3px"></div>
+        </div>
+        <div style="margin-bottom:8px">
+          <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px" id="lRuleAction">Action</label>
+          <select id="ruleAction" onchange="onRuleActionChange()" style="width:100%;padding:8px;font-size:13px;border-radius:var(--radius-md);border:0.5px solid var(--border);background:var(--bg-primary);color:var(--text-primary)">
+            <option value="buy" id="oActionBuy"></option>
+            <option value="sell" id="oActionSell"></option>
+          </select>
+        </div>
+        <div style="margin-bottom:8px" id="rowRuleAmount">
+          <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px" id="lRuleAmount">Amount to spend</label>
+          <input type="number" id="ruleAmount" min="1" step="0.01" placeholder="25" style="width:100%;padding:8px;font-size:13px;border-radius:var(--radius-md);border:0.5px solid var(--border);background:var(--bg-primary);color:var(--text-primary)">
+        </div>
+        <div style="margin-bottom:8px;display:none" id="rowRuleSellPct">
+          <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px" id="lRuleSellPct">Sell % of position</label>
+          <input type="number" id="ruleSellPct" min="1" max="100" step="1" placeholder="100" style="width:100%;padding:8px;font-size:13px;border-radius:var(--radius-md);border:0.5px solid var(--border);background:var(--bg-primary);color:var(--text-primary)">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <input type="checkbox" id="ruleRepeat" style="width:16px;height:16px;cursor:pointer">
+          <label for="ruleRepeat" style="font-size:12px;color:var(--text-secondary)" id="lRuleRepeat">Keep this rule active after it fires once</label>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="saveRule()" style="flex:1;padding:8px;font-size:13px;font-weight:500;border-radius:var(--radius-md);background:var(--green);color:#fff;border:none;cursor:pointer" id="btnSaveRule">Save Rule</button>
+          <button onclick="document.getElementById('addRuleForm').style.display='none'" style="flex:1;padding:8px;font-size:13px;border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-secondary);border:0.5px solid var(--border);cursor:pointer" id="btnCancelRule">Cancel</button>
+        </div>
+      </div>
+      <div id="customRulesCount" style="font-size:11px;color:var(--text-tertiary);margin-top:6px"></div>
+    </div>
     <div style="text-align:center;font-size:11px;color:var(--text-tertiary);padding:1rem">WiseSignals · Phase 2</div>
   </div>
 </div>
@@ -571,6 +623,16 @@ en:{
   watchlistTitlePlatinum:'Watchlist ({n} coins: trending + yours)',
   customCoinsTitle:'My Coins (Platinum)',customCoinsDesc:'Add any CoinGecko coin ID to trade it here, in addition to the main watchlist.',
   customCoinsLocked:'Requires Platinum plan',noCustomCoins:'No custom coins added yet.',remove:'Remove',coinsAdded:'coins added',
+  customRulesTitle:'Custom Rules (Platinum)',customRulesDesc:'Automatically buy or sell a coin when a price or gain/loss condition is met — independent of the Strong Buy/Sell signals auto-trade uses.',
+  noCustomRules:'No custom rules yet.',couldNotLoadRules:'Could not load rules',couldNotSaveRule:'Could not save rule',couldNotDeleteRule:'Could not delete rule',
+  ruleCoin:'Coin',ruleCondition:'Condition',condPriceAbove:'Price rises above',condPriceBelow:'Price falls below',condGainEntry:'Gain % from entry',condDropEntry:'Drop % from entry',condGainCreation:'Gain % from rule creation',condDropCreation:'Drop % from rule creation',
+  ruleValue:'Value',ruleValueHintPrice:'Absolute price in your currency.',ruleValueHintPct:'Percentage — e.g. 5 for 5%.',
+  ruleAction:'Action',actionBuy:'Buy',actionSell:'Sell',ruleAmount:'Amount to spend',ruleSellPct:'Sell % of position',
+  ruleRepeat:'Keep this rule active after it fires once',ruleSaveBtn:'Save Rule',ruleCancelBtn:'Cancel',addRuleBtn:'+ Add Rule',
+  ruleActive:'Active',ruleInactive:'Inactive',ruleRepeats:'Repeats',ruleOnceOff:'Fires once',rulesCountLabel:'{n} / {m} active rules',
+  ruleSavedToast:'Rule saved ✅',ruleDeletedToast:'Rule deleted',confirmDeleteRule:'Delete this rule?',
+  ruleInvalidValue:'Enter a value greater than 0',ruleInvalidAmount:'Enter an amount to spend',ruleInvalidSellPct:'Enter a sell % between 1 and 100',
+  ruleGainFloorError:'Gain must be at least {m}% — a smaller take-profit target would lose money to Kraken\'s round-trip fee.',
   couldNotLoadCoins:'Could not load coins.',addCoinBtn:'Add',addedCoin:'added',couldNotAddCoin:'Could not add coin',
   coinRemoved:'Coin removed',couldNotRemoveCoin:'Could not remove coin',
   reset:'Reset paper portfolio to $100',
@@ -656,6 +718,16 @@ fa:{
   watchlistTitlePlatinum:'واچ‌لیست ({n} کوین: پرطرفدار + کوین‌های شما)',
   customCoinsTitle:'کوین‌های من (پلاتینیوم)',customCoinsDesc:'هر شناسه کوین از CoinGecko را اضافه کنید تا علاوه بر واچ‌لیست اصلی، آن را هم معامله کنید.',
   customCoinsLocked:'نیازمند پلن پلاتینیوم',noCustomCoins:'هنوز کوین سفارشی اضافه نشده.',remove:'حذف',coinsAdded:'کوین اضافه شده',
+  customRulesTitle:'قوانین سفارشی (پلاتینیوم)',customRulesDesc:'خرید یا فروش خودکار یک کوین وقتی شرط قیمت یا سود/زیان برقرار شود — مستقل از سیگنال‌های Strong Buy/Sell که اتوتریدر استفاده می‌کند.',
+  noCustomRules:'هنوز قانون سفارشی‌ای ثبت نشده.',couldNotLoadRules:'بارگذاری قوانین ممکن نشد',couldNotSaveRule:'ذخیره قانون ممکن نشد',couldNotDeleteRule:'حذف قانون ممکن نشد',
+  ruleCoin:'کوین',ruleCondition:'شرط',condPriceAbove:'قیمت بالاتر رود از',condPriceBelow:'قیمت پایین‌تر رود از',condGainEntry:'٪ سود نسبت به ورود',condDropEntry:'٪ افت نسبت به ورود',condGainCreation:'٪ سود نسبت به زمان ساخت قانون',condDropCreation:'٪ افت نسبت به زمان ساخت قانون',
+  ruleValue:'مقدار',ruleValueHintPrice:'قیمت مطلق به واحد پول شما.',ruleValueHintPct:'درصد — مثلاً ۵ برای ۵٪.',
+  ruleAction:'اقدام',actionBuy:'خرید',actionSell:'فروش',ruleAmount:'مبلغ خرید',ruleSellPct:'درصد فروش از موقعیت',
+  ruleRepeat:'این قانون پس از یک‌بار اجرا فعال بماند',ruleSaveBtn:'ذخیره قانون',ruleCancelBtn:'انصراف',addRuleBtn:'+ افزودن قانون',
+  ruleActive:'فعال',ruleInactive:'غیرفعال',ruleRepeats:'تکرارشونده',ruleOnceOff:'یک‌بار اجرا',rulesCountLabel:'{n} از {m} قانون فعال',
+  ruleSavedToast:'قانون ذخیره شد ✅',ruleDeletedToast:'قانون حذف شد',confirmDeleteRule:'این قانون حذف شود؟',
+  ruleInvalidValue:'مقداری بزرگ‌تر از ۰ وارد کنید',ruleInvalidAmount:'مبلغی برای خرید وارد کنید',ruleInvalidSellPct:'درصد فروش بین ۱ تا ۱۰۰ وارد کنید',
+  ruleGainFloorError:'سود باید حداقل {m}٪ باشد — هدف کوچک‌تر برای سود، به‌خاطر کارمزد رفت‌وبرگشت کرکن ضرر می‌دهد.',
   couldNotLoadCoins:'بارگذاری کوین‌ها ممکن نشد.',addCoinBtn:'افزودن',addedCoin:'اضافه شد',couldNotAddCoin:'افزودن کوین ممکن نشد',
   coinRemoved:'کوین حذف شد',couldNotRemoveCoin:'حذف کوین ممکن نشد',
   reset:'ریست پورتفولیوی مجازی به ۱۰۰ دلار',
@@ -741,6 +813,16 @@ es:{
   watchlistTitlePlatinum:'Lista de seguimiento ({n} monedas: tendencia + tuyas)',
   customCoinsTitle:'Mis monedas (Platinum)',customCoinsDesc:'Agrega cualquier ID de moneda de CoinGecko para operarla aquí, además de la lista principal.',
   customCoinsLocked:'Requiere plan Platinum',noCustomCoins:'Aún no has agregado monedas personalizadas.',remove:'Eliminar',coinsAdded:'monedas agregadas',
+  customRulesTitle:'Reglas personalizadas (Platinum)',customRulesDesc:'Compra o vende automáticamente una moneda cuando se cumpla una condición de precio o de ganancia/pérdida — independiente de las señales de Compra/Venta Fuerte que usa auto-trade.',
+  noCustomRules:'Aún no hay reglas personalizadas.',couldNotLoadRules:'No se pudieron cargar las reglas',couldNotSaveRule:'No se pudo guardar la regla',couldNotDeleteRule:'No se pudo eliminar la regla',
+  ruleCoin:'Moneda',ruleCondition:'Condición',condPriceAbove:'El precio sube por encima de',condPriceBelow:'El precio baja por debajo de',condGainEntry:'% de ganancia desde la entrada',condDropEntry:'% de caída desde la entrada',condGainCreation:'% de ganancia desde la creación de la regla',condDropCreation:'% de caída desde la creación de la regla',
+  ruleValue:'Valor',ruleValueHintPrice:'Precio absoluto en tu moneda.',ruleValueHintPct:'Porcentaje — ej. 5 para 5%.',
+  ruleAction:'Acción',actionBuy:'Comprar',actionSell:'Vender',ruleAmount:'Monto a gastar',ruleSellPct:'% de la posición a vender',
+  ruleRepeat:'Mantener esta regla activa después de dispararse una vez',ruleSaveBtn:'Guardar regla',ruleCancelBtn:'Cancelar',addRuleBtn:'+ Agregar regla',
+  ruleActive:'Activa',ruleInactive:'Inactiva',ruleRepeats:'Se repite',ruleOnceOff:'Se dispara una vez',rulesCountLabel:'{n} / {m} reglas activas',
+  ruleSavedToast:'Regla guardada ✅',ruleDeletedToast:'Regla eliminada',confirmDeleteRule:'¿Eliminar esta regla?',
+  ruleInvalidValue:'Ingresa un valor mayor que 0',ruleInvalidAmount:'Ingresa un monto para gastar',ruleInvalidSellPct:'Ingresa un % de venta entre 1 y 100',
+  ruleGainFloorError:'La ganancia debe ser de al menos {m}% — un objetivo menor perdería dinero por la comisión de ida y vuelta de Kraken.',
   couldNotLoadCoins:'No se pudieron cargar las monedas.',addCoinBtn:'Agregar',addedCoin:'agregada',couldNotAddCoin:'No se pudo agregar la moneda',
   coinRemoved:'Moneda eliminada',couldNotRemoveCoin:'No se pudo eliminar la moneda',
   reset:'Reiniciar portafolio a $100',
@@ -833,8 +915,12 @@ function applyLanguage(){
   const r=appSettings.auto_risk_pct||25,d=effectiveDelayMin();
   const adesc=document.getElementById('autoDesc');if(adesc)adesc.innerHTML=t('autoDesc').replace('{r}',r).replace('{d}',d);
   // Settings labels
-  const sm={lSigSens:'sigSens',lMinStrength:'minStrength',lMinMove:'minMove',lDefAmount:'defAmount',lQuickPreset:'quickPreset',lCustomAmt:'customAmt',lWatchlistDesc:'watchlistDesc',lCustomCoinsTitle:'customCoinsTitle',lCustomCoinsDesc:'customCoinsDesc'};
+  const sm={lSigSens:'sigSens',lMinStrength:'minStrength',lMinMove:'minMove',lDefAmount:'defAmount',lQuickPreset:'quickPreset',lCustomAmt:'customAmt',lWatchlistDesc:'watchlistDesc',lCustomCoinsTitle:'customCoinsTitle',lCustomCoinsDesc:'customCoinsDesc',
+    lCustomRulesTitle:'customRulesTitle',lCustomRulesDesc:'customRulesDesc',lRuleCoin:'ruleCoin',lRuleCondition:'ruleCondition',
+    oCondPriceAbove:'condPriceAbove',oCondPriceBelow:'condPriceBelow',oCondGainEntry:'condGainEntry',oCondDropEntry:'condDropEntry',oCondGainCreation:'condGainCreation',oCondDropCreation:'condDropCreation',
+    lRuleValue:'ruleValue',lRuleAction:'ruleAction',oActionBuy:'actionBuy',oActionSell:'actionSell',lRuleAmount:'ruleAmount',lRuleSellPct:'ruleSellPct',lRuleRepeat:'ruleRepeat',btnSaveRule:'ruleSaveBtn',btnCancelRule:'ruleCancelBtn',btnAddRule:'addRuleBtn'};
   Object.entries(sm).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
+  onRuleConditionChange();
   const oc=document.getElementById('oCustom');if(oc)oc.textContent=t('custom');
   const oa=document.getElementById('oAll');if(oa)oa.textContent=t('allSignals');
   const om=document.getElementById('oMod');if(om)om.textContent=t('moderatePlus');
@@ -2292,6 +2378,7 @@ function loadSettings(){
   const row=document.getElementById('customDefaultRow');if(row)row.style.display=appSettings.tradeSize==='custom'?'flex':'none';
   renderWatchlistDisplay();
   renderCustomCoinsSection();
+  renderCustomRulesSection();
 }
 
 // ── CUSTOM COINS (Platinum) ────────────────────────────────────
@@ -2345,6 +2432,136 @@ async function removeCustomCoin(coinId){
     await renderCustomCoinsSection();
     showToast(t('coinRemoved'));
   }catch(e){showToast(e.message||t('couldNotRemoveCoin'),'red');}
+}
+
+// ── CUSTOM RULES (Platinum) ──────────────────────────────────
+// Mirrors the backend's autoTradeEngine.js MIN_MOVE_PCT_TO_CLEAR_FEES — a
+// take-profit rule (pct_gain_from_entry + sell) set below this is rejected
+// server-side anyway, but checking here first avoids a round-trip just to
+// get told the same thing.
+const MIN_GAIN_PCT_TO_CLEAR_FEES=1;
+let rulesCache=[];
+const PCT_CONDITIONS=['pct_gain_from_entry','pct_drop_from_entry','pct_gain_from_creation','pct_drop_from_creation'];
+
+async function renderCustomRulesSection(){
+  const listEl=document.getElementById('customRulesList');
+  const addBtn=document.getElementById('btnAddRule');
+  const countEl=document.getElementById('customRulesCount');
+  if(!listEl)return;
+  const plan=currentUser?.plan||'free';
+  if(PLAN_HIERARCHY[plan]<PLAN_HIERARCHY.platinum){
+    listEl.innerHTML=`<div style="padding:10px;background:var(--bg-secondary);border-radius:var(--radius-md);font-size:12px;color:var(--text-tertiary);text-align:center">🔒 ${t('customCoinsLocked')}</div>`;
+    if(addBtn)addBtn.style.display='none';
+    if(countEl)countEl.textContent='';
+    document.getElementById('addRuleForm').style.display='none';
+    return;
+  }
+  if(addBtn)addBtn.style.display='block';
+  try{
+    rulesCache=await apiFetch('/api/user/rules');
+    listEl.innerHTML=!rulesCache.length?`<div style="font-size:12px;color:var(--text-tertiary);text-align:center;padding:6px">${t('noCustomRules')}</div>`:rulesCache.map(r=>{
+      const coin=COINS.find(c=>c.id===r.coin_id);
+      const label=coin?`${coin.name} (${coin.symbol})`:r.coin_symbol;
+      const cond=ruleConditionText(r);
+      const actionText=r.action==='buy'?`${t('actionBuy')} ${curSym()}${(r.amount_usd||0).toFixed(2)}`:`${t('actionSell')} ${r.sell_pct}%`;
+      return`<div style="padding:8px 0;border-bottom:0.5px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;font-weight:500">${label}</span>
+          <div style="display:flex;gap:6px">
+            <button onclick="toggleRuleActive('${r.id}',${r.active?0:1})" style="font-size:11px;padding:3px 8px;border-radius:6px;background:${r.active?'var(--green-bg)':'var(--bg-primary)'};border:0.5px solid ${r.active?'var(--green)':'var(--border)'};color:${r.active?'var(--green-text)':'var(--text-secondary)'};cursor:pointer">${r.active?t('ruleActive'):t('ruleInactive')}</button>
+            <button onclick="deleteRule('${r.id}')" style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--red-bg);border:0.5px solid var(--red);color:var(--red-text);cursor:pointer">${t('remove')}</button>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">${cond} · ${actionText} · ${r.repeat?t('ruleRepeats'):t('ruleOnceOff')}</div>
+      </div>`;
+    }).join('');
+    const activeCount=rulesCache.filter(r=>r.active).length;
+    if(countEl)countEl.textContent=t('rulesCountLabel').replace('{n}',activeCount).replace('{m}',5);
+  }catch(e){listEl.innerHTML=`<div style="font-size:12px;color:var(--red-text);text-align:center">${t('couldNotLoadRules')}</div>`;}
+}
+
+function ruleConditionText(r){
+  const v=r.value;
+  if(r.condition_type==='price_above')return`${t('condPriceAbove')} ${curSym()}${v.toFixed(2)}`;
+  if(r.condition_type==='price_below')return`${t('condPriceBelow')} ${curSym()}${v.toFixed(2)}`;
+  if(r.condition_type==='pct_gain_from_entry')return`${t('condGainEntry')} ${v}%`;
+  if(r.condition_type==='pct_drop_from_entry')return`${t('condDropEntry')} ${v}%`;
+  if(r.condition_type==='pct_gain_from_creation')return`${t('condGainCreation')} ${v}% (${curSym()}${(r.reference_price||0).toFixed(2)})`;
+  if(r.condition_type==='pct_drop_from_creation')return`${t('condDropCreation')} ${v}% (${curSym()}${(r.reference_price||0).toFixed(2)})`;
+  return r.condition_type;
+}
+
+function openAddRule(){
+  const coinSel=document.getElementById('ruleCoin');
+  coinSel.innerHTML=COINS.map(c=>`<option value="${c.id}" data-symbol="${c.symbol}">${c.name} (${c.symbol})</option>`).join('');
+  document.getElementById('ruleValue').value='';
+  document.getElementById('ruleAmount').value='';
+  document.getElementById('ruleSellPct').value='100';
+  document.getElementById('ruleRepeat').checked=false;
+  document.getElementById('ruleCondition').value='price_above';
+  document.getElementById('ruleAction').value='buy';
+  onRuleConditionChange();
+  onRuleActionChange();
+  document.getElementById('addRuleForm').style.display='block';
+}
+
+function onRuleConditionChange(){
+  const cond=document.getElementById('ruleCondition').value;
+  const isPct=PCT_CONDITIONS.includes(cond);
+  document.getElementById('lRuleValueHint').textContent=isPct?t('ruleValueHintPct'):t('ruleValueHintPrice');
+}
+
+function onRuleActionChange(){
+  const action=document.getElementById('ruleAction').value;
+  document.getElementById('rowRuleAmount').style.display=action==='buy'?'block':'none';
+  document.getElementById('rowRuleSellPct').style.display=action==='sell'?'block':'none';
+}
+
+async function saveRule(){
+  const coinSel=document.getElementById('ruleCoin');
+  const coinId=coinSel.value;
+  const coinSymbol=coinSel.selectedOptions[0]?.dataset.symbol||coinId;
+  const conditionType=document.getElementById('ruleCondition').value;
+  const value=parseFloat(document.getElementById('ruleValue').value);
+  const action=document.getElementById('ruleAction').value;
+  const amountUsd=parseFloat(document.getElementById('ruleAmount').value);
+  const sellPct=parseFloat(document.getElementById('ruleSellPct').value);
+  const repeat=document.getElementById('ruleRepeat').checked;
+  if(!value||value<=0){showToast(t('ruleInvalidValue'),'red');return;}
+  if(action==='buy'&&(!amountUsd||amountUsd<=0)){showToast(t('ruleInvalidAmount'),'red');return;}
+  if(action==='sell'&&(!sellPct||sellPct<=0||sellPct>100)){showToast(t('ruleInvalidSellPct'),'red');return;}
+  // Same floor the server enforces (see autoTradeEngine.js's
+  // MIN_MOVE_PCT_TO_CLEAR_FEES) — checked here too so the user finds out
+  // before submitting, not after.
+  if(conditionType==='pct_gain_from_entry'&&action==='sell'&&value<MIN_GAIN_PCT_TO_CLEAR_FEES){
+    showToast(t('ruleGainFloorError').replace('{m}',MIN_GAIN_PCT_TO_CLEAR_FEES),'red');
+    return;
+  }
+  const btn=document.getElementById('btnSaveRule');
+  btn.disabled=true;btn.textContent='...';
+  try{
+    await apiFetch('/api/user/rules',{method:'POST',body:JSON.stringify({coinId,coinSymbol,conditionType,value,action,amountUsd:action==='buy'?amountUsd:undefined,sellPct:action==='sell'?sellPct:undefined,repeat})});
+    document.getElementById('addRuleForm').style.display='none';
+    await renderCustomRulesSection();
+    showToast(t('ruleSavedToast'),'green');
+  }catch(e){showToast(e.message||t('couldNotSaveRule'),'red');}
+  finally{btn.disabled=false;btn.textContent=t('ruleSaveBtn');}
+}
+
+async function toggleRuleActive(id,active){
+  try{
+    await apiFetch('/api/user/rules/'+id,{method:'PUT',body:JSON.stringify({active:!!active})});
+    await renderCustomRulesSection();
+  }catch(e){showToast(e.message||t('couldNotSaveRule'),'red');}
+}
+
+async function deleteRule(id){
+  if(!confirm(t('confirmDeleteRule')))return;
+  try{
+    await apiFetch('/api/user/rules/'+id,{method:'DELETE'});
+    await renderCustomRulesSection();
+    showToast(t('ruleDeletedToast'));
+  }catch(e){showToast(e.message||t('couldNotDeleteRule'),'red');}
 }
 
 // ── FETCH DATA ───────────────────────────────────────────────
