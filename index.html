@@ -1998,14 +1998,24 @@ async function renderCoins(data){
         </div>
       </div>
       <div class="detail-panel" id="dp-${coin.id}">
-        ${hasPos?(posPnl!==null?`<div style="background:var(--green-bg);border-radius:var(--radius-md);padding:8px 10px;margin-bottom:8px;border:0.5px solid var(--green)">
+        ${hasPos?(posPnl!==null?(()=>{
+          // Was always green regardless of P&L — this is the one place in
+          // the app that showed a position's own color-coded state, so a
+          // losing position looked identical to a winning one. Matches the
+          // top "REAL" mode badge's red/pink tokens (var(--red)/--red-bg/
+          // --red-text) when negative, same green tokens as before when
+          // positive — both already theme-aware (light-mode --red-bg is a
+          // pale pink, dark-mode darkens it), so no new colors to maintain.
+          const up=posPnl>=0;
+          const bg=up?'var(--green-bg)':'var(--red-bg)',bd=up?'var(--green)':'var(--red)',tc=up?'var(--green-text)':'var(--red-text)';
+          return`<div style="background:${bg};border-radius:var(--radius-md);padding:8px 10px;margin-bottom:8px;border:0.5px solid ${bd}">
           <div style="display:flex;justify-content:space-between;align-items:baseline">
-            <span style="font-size:12px;font-weight:600;color:var(--green-text)">${t('yourPosition')}${isRealMode?` <span style="font-weight:400">(Kraken${(posData.is_auto||posData.isAuto)?' <i class="ti ti-robot"></i>':''})</span>`:''}</span>
-            <span style="font-size:15px;font-weight:700;color:var(--green-text)">${curSym()}${posVal.toFixed(2)} <span style="font-size:12px">(${posPnl>=0?'+':''}${(posPnl/posEntryAmount*100).toFixed(2)}%)</span></span>
+            <span style="font-size:12px;font-weight:600;color:${tc}">${t('yourPosition')}${isRealMode?` <span style="font-weight:400">(Kraken${(posData.is_auto||posData.isAuto)?' <i class="ti ti-robot"></i>':''})</span>`:''}</span>
+            <span style="font-size:15px;font-weight:700;color:${tc}">${curSym()}${posVal.toFixed(2)} <span style="font-size:12px">(${posPnl>=0?'+':''}${(posPnl/posEntryAmount*100).toFixed(2)}%)</span></span>
           </div>
-          <div style="font-size:11px;color:var(--green-text);margin-top:3px">${posData.units.toFixed(6)} ${coin.symbol} · ${t('avgEntry')} ${curSym()}${posEntryPrice.toFixed(2)} · ${t('pnl')} <strong>${posPnl>=0?'+':''}${curSym()}${posPnl.toFixed(2)}</strong></div>
-          <div style="font-size:11px;color:var(--green-text);margin-top:1px">${t('invested')} ${curSym()}${posEntryAmount.toFixed(2)} · ${t('now')} ${curSym()}${dispPrice>=1?dispPrice.toFixed(2):dispPrice.toFixed(4)}</div>
-        </div>`:`<div style="background:var(--green-bg);border-radius:var(--radius-md);padding:8px 10px;margin-bottom:8px;border:0.5px solid var(--green)">
+          <div style="font-size:11px;color:${tc};margin-top:3px">${posData.units.toFixed(6)} ${coin.symbol} · ${t('avgEntry')} ${curSym()}${posEntryPrice.toFixed(2)} · ${t('pnl')} <strong>${posPnl>=0?'+':''}${curSym()}${posPnl.toFixed(2)}</strong></div>
+          <div style="font-size:11px;color:${tc};margin-top:1px">${t('invested')} ${curSym()}${posEntryAmount.toFixed(2)} · ${t('now')} ${curSym()}${dispPrice>=1?dispPrice.toFixed(2):dispPrice.toFixed(4)}</div>
+        </div>`;})():`<div style="background:var(--green-bg);border-radius:var(--radius-md);padding:8px 10px;margin-bottom:8px;border:0.5px solid var(--green)">
           <div style="display:flex;justify-content:space-between;align-items:baseline">
             <span style="font-size:12px;font-weight:600;color:var(--green-text)">${t('yourPosition')} <span style="font-weight:400">(Kraken)</span></span>
             <span style="font-size:15px;font-weight:700;color:var(--green-text)">${curSym()}${posVal.toFixed(2)}</span>
