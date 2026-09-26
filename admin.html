@@ -303,6 +303,7 @@ function logout(){adminToken=null;sessionStorage.removeItem('ks_admin_token');wi
 // ── DATA ─────────────────────────────────────────────────────
 async function getUsers(){return adminApiFetch('/api/admin/users');}
 async function getInvites(){return adminApiFetch('/api/admin/invites');}
+async function getTradeStats(){return adminApiFetch('/api/admin/trade-stats');}
 
 // ── STATS ────────────────────────────────────────────────────
 async function updateStats(){
@@ -317,10 +318,19 @@ async function updateStats(){
 
 // ── USERS ────────────────────────────────────────────────────
 let usersCache=[];
+let tradeStatsCache={};
 async function renderUsers(){
   const el=document.getElementById('usersList');
   try{usersCache=await getUsers();}catch(e){el.innerHTML=`<div class="empty">Could not load users: ${e.message}</div>`;return;}
   if(!usersCache.length){el.innerHTML='<div class="empty">No users yet. Generate an invitation link to add users.</div>';return;}
+  // Trading ACTIVITY only — count and P&L, never the trades themselves
+  // (coin, side, price). A user's actual trades stay private/confidential;
+  // this is just enough for ops to see whether the app is being used and
+  // whether auto-trade users are net profitable.
+  try{
+    const stats=await getTradeStats();
+    tradeStatsCache=Object.fromEntries(stats.map(s=>[s.userId,s]));
+  }catch(e){tradeStatsCache={};}
   const now=Date.now();
   el.innerHTML=usersCache.map(u=>{
     const expired=u.expires_at>0&&u.expires_at<now;
@@ -329,11 +339,14 @@ async function renderUsers(){
     const dotClass=status==='active'?'dot-active':status==='expired'?'dot-expired':'dot-disabled';
     const expiryStr=!u.expires_at?'Never':new Date(u.expires_at).toLocaleDateString('en-CA');
     const planClass=`plan-${u.plan||'free'}`;
+    const ts=tradeStatsCache[u.id];
+    const activityLine=ts?`<div class="user-meta">📊 ${ts.tradesWeek} trades/7d · ${ts.tradesMonth} trades/30d · P&L: <span style="color:${ts.pnlAllTimeUsd>=0?'var(--green)':'var(--red)'};font-weight:600">${ts.pnlAllTimeUsd>=0?'+':''}$${ts.pnlAllTimeUsd.toFixed(2)}</span></div>`:'';
     return`<div class="user-row">
       <div class="user-avatar">${(u.name||'U').charAt(0).toUpperCase()}</div>
       <div class="user-info">
         <div class="user-name">${u.name||'Unknown'} <span class="plan-badge ${planClass}">${(u.plan||'free').toUpperCase()}</span></div>
         <div class="user-meta"><span class="status-dot ${dotClass}"></span>${status} · ${u.email} · Expires: ${expiryStr}${expiringSoon?' ⚠️':''}</div>
+        ${activityLine}
       </div>
       <div class="user-actions">
         <button class="btn btn-ghost btn-sm" onclick="openEditUser('${u.id}')">Edit</button>
