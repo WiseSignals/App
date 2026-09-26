@@ -214,9 +214,10 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
   <div id="tab-history" class="panel">
     <div style="font-size:12px;color:var(--text-tertiary);padding:0.75rem 1rem 0;line-height:1.5" id="lHistoryDesc"></div>
     <div style="display:flex;gap:6px;padding:0.5rem 1rem;flex-wrap:wrap">
-      <div class="chart-tab period-tab active" data-period="yesterday" onclick="selectPeriod('yesterday')" id="ptYesterday"></div>
-      <div class="chart-tab period-tab" data-period="week" onclick="selectPeriod('week')" id="ptWeek"></div>
-      <div class="chart-tab period-tab" data-period="month" onclick="selectPeriod('month')" id="ptMonth"></div>
+      <div class="chart-tab period-tab active" data-period="today" onclick="selectPeriod('today')" id="ptToday"></div>
+      <div class="chart-tab period-tab" data-period="3d" onclick="selectPeriod('3d')" id="pt3d"></div>
+      <div class="chart-tab period-tab" data-period="7d" onclick="selectPeriod('7d')" id="pt7d"></div>
+      <div class="chart-tab period-tab" data-period="30d" onclick="selectPeriod('30d')" id="pt30d"></div>
       <div class="chart-tab period-tab" data-period="all" onclick="selectPeriod('all')" id="ptAll"></div>
     </div>
     <div id="periodReport" style="margin:0 1rem 0.5rem;background:var(--bg-primary);border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:1rem"></div>
@@ -546,7 +547,7 @@ en:{
   noPositions:'No open positions yet.',closedTrades:'Closed trades',noTrades:'No closed trades yet.\nAccept a signal to start.',
   historyDesc:'Completed trade cycles only — a buy followed by its matching sell, with the realized profit or loss (manual or auto). Currently open positions aren\'t closed yet, so they show in Portfolio instead.',
   tradeClosedWin:'Trade closed',
-  yesterday:'Yesterday',thisWeek:'This Week',thisMonth:'This Month',allTime:'All Time',
+  today:'Today',last3Days:'Last 3 Days',last7Days:'Last 7 Days',last30Days:'Last 30 Days',allTime:'All Time',
   bestTrade:'Best trade',worstTrade:'Worst trade',avgPerTrade:'Avg per trade',feesPaid:'Fees paid',
   trades:'trades',wins:'wins',losses:'losses',noTradesPeriod:'No trades in this period.',
   autoOn:'Auto-trade is ON · Strong signals execute after',minDelay:'min',
@@ -631,7 +632,7 @@ fa:{
   noPositions:'هنوز موقعیت بازی ندارید.',closedTrades:'معاملات بسته شده',noTrades:'هنوز معامله‌ای بسته نشده.\nیک سیگنال را تأیید کنید.',
   historyDesc:'فقط چرخه‌های کامل‌شده معامله — یک خرید به همراه فروش متناظرش، با سود یا زیان تحقق‌یافته (دستی یا خودکار). موقعیت‌های بازِ فعلی هنوز بسته نشده‌اند، پس در تب پورتفولیو نمایش داده می‌شوند.',
   tradeClosedWin:'معامله بسته شد',
-  yesterday:'دیروز',thisWeek:'این هفته',thisMonth:'این ماه',allTime:'همه زمان‌ها',
+  today:'امروز',last3Days:'۳ روز اخیر',last7Days:'۷ روز اخیر',last30Days:'۳۰ روز اخیر',allTime:'همه زمان‌ها',
   bestTrade:'بهترین معامله',worstTrade:'بدترین معامله',avgPerTrade:'میانگین هر معامله',feesPaid:'کارمزد پرداختی',
   trades:'معامله',wins:'برد',losses:'باخت',noTradesPeriod:'در این دوره معامله‌ای نبود.',
   autoOn:'اتوتریدر روشن است · سیگنال‌های قوی بعد از',minDelay:'دقیقه اجرا می‌شوند',
@@ -716,7 +717,7 @@ es:{
   noPositions:'Sin posiciones abiertas.',closedTrades:'Operaciones cerradas',noTrades:'Sin operaciones cerradas.\nAcepta una señal para empezar.',
   historyDesc:'Solo ciclos de operación completados — una compra seguida de su venta correspondiente, con la ganancia o pérdida realizada (manual o automática). Las posiciones abiertas actuales aún no están cerradas, así que se muestran en Portafolio.',
   tradeClosedWin:'Operación cerrada',
-  yesterday:'Ayer',thisWeek:'Esta semana',thisMonth:'Este mes',allTime:'Todo el tiempo',
+  today:'Hoy',last3Days:'Últimos 3 días',last7Days:'Últimos 7 días',last30Days:'Últimos 30 días',allTime:'Todo el tiempo',
   bestTrade:'Mejor operación',worstTrade:'Peor operación',avgPerTrade:'Promedio/operación',feesPaid:'Comisiones',
   trades:'operaciones',wins:'victorias',losses:'pérdidas',noTradesPeriod:'Sin operaciones en este período.',
   autoOn:'Auto-trade ACTIVO · Señales fuertes ejecutarán en',minDelay:'min',
@@ -818,7 +819,7 @@ function applyLanguage(){
   const lpp=document.getElementById('lPaperPortfolio');if(lpp)lpp.textContent=t('paperPortfolio');
   const lnp=document.getElementById('lNoPositions');if(lnp)lnp.textContent=t('noPositions');
   // History
-  const ptm={ptYesterday:'yesterday',ptWeek:'thisWeek',ptMonth:'thisMonth',ptAll:'allTime'};
+  const ptm={ptToday:'today',pt3d:'last3Days',pt7d:'last7Days',pt30d:'last30Days',ptAll:'allTime'};
   Object.entries(ptm).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   const lct=document.getElementById('lClosedTrades');if(lct)lct.textContent=t('closedTrades');
   const lhd=document.getElementById('lHistoryDesc');if(lhd)lhd.textContent=t('historyDesc');
@@ -2059,7 +2060,7 @@ function renderPortfolio(){
 }
 
 // ── RENDER HISTORY ───────────────────────────────────────────
-let currentPeriod='yesterday';
+let currentPeriod='today';
 function selectPeriod(period){
   currentPeriod=period;
   document.querySelectorAll('.period-tab').forEach(el=>el.classList.toggle('active',el.dataset.period===period));
@@ -2067,9 +2068,10 @@ function selectPeriod(period){
 }
 function getPeriodRange(period){
   const now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-  if(period==='yesterday'){const y=new Date(today);y.setDate(y.getDate()-1);return{from:y.getTime(),to:today.getTime()};}
-  if(period==='week'){const w=new Date(today);w.setDate(w.getDate()-7);return{from:w.getTime(),to:now.getTime()};}
-  if(period==='month'){const m=new Date(today);m.setDate(m.getDate()-30);return{from:m.getTime(),to:now.getTime()};}
+  if(period==='today'){return{from:today.getTime(),to:now.getTime()};}
+  if(period==='3d'){const d=new Date(today);d.setDate(d.getDate()-3);return{from:d.getTime(),to:now.getTime()};}
+  if(period==='7d'){const d=new Date(today);d.setDate(d.getDate()-7);return{from:d.getTime(),to:now.getTime()};}
+  if(period==='30d'){const d=new Date(today);d.setDate(d.getDate()-30);return{from:d.getTime(),to:now.getTime()};}
   return{from:0,to:now.getTime()};
 }
 function renderHistory(){
@@ -2186,7 +2188,22 @@ function renderAutoTab(){
   const qEl=document.getElementById('autoQueue');
   if(qEl)qEl.innerHTML=!autoQueue.length?`<div class="empty-state">${t('noQueue')}</div>`:autoQueue.map(q=>{const coin=COINS.find(c=>c.id===q.coin_id);const mins=Math.max(0,Math.round((q.execute_at-Date.now())/60000));return`<div class="auto-queue-item"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;font-weight:500">${coin?.name||q.coin_id}</span><span class="signal-badge ${q.signal_type==='BUY'?'badge-buy':'badge-sell'}">${q.signal_strength} ${q.signal_type}</span></div><div style="font-size:11px;color:var(--blue-text);margin-top:4px">${t('queued')} ${curSym()}${q.price_at_signal?.toFixed(2)||'—'} · ${t('executesIn')} ~${mins} ${t('minDelay')}</div></div>`;}).join('');
   const logEl=document.getElementById('autoLog'),logs=tradesHistory.filter(tr=>tr.is_auto);
-  if(logEl)logEl.innerHTML=!logs.length?`<div class="empty-state">${t('noAutoLog')}</div>`:logs.slice(0,20).map(l=>{const coin=COINS.find(c=>c.id===l.coin_id);const date=new Date(l.created_at).toLocaleDateString('en-CA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});const hasPnl=l.trade_type==='SELL';return`<div class="trade-item"><div class="trade-header"><span class="trade-coin">${coin?.name||l.coin_symbol} <span class="auto-badge"><i class="ti ti-robot"></i> AUTO</span></span><span style="font-size:13px;font-weight:500" class="${l.trade_type==='BUY'?'pos':'neg'}">${l.trade_type} ${curSym()}${l.amount_usd?.toFixed(2)}</span></div><div class="trade-meta">${t('entry')} ${curSym()}${l.price?.toFixed(2)} · ${date}${hasPnl?` · ${t('pnl')} <span class="${l.pnl>=0?'pos':'neg'}">${l.pnl>=0?'+':''}${curSym()}${l.pnl.toFixed(2)}</span>`:''}</div></div>`;}).join('');
+  // A closed (SELL) auto-trade row shows the same cycle detail as the
+  // Telegram/email cycle summary — avg. buy price -> sell price, fees, P&L%
+  // — instead of just the exit leg, so this log actually answers "how did
+  // that auto-trade do" without switching to the History tab. A still-open
+  // BUY row has no cycle to report yet, so it keeps the simple amount/price
+  // line.
+  if(logEl)logEl.innerHTML=!logs.length?`<div class="empty-state">${t('noAutoLog')}</div>`:logs.slice(0,20).map(l=>{
+    const coin=COINS.find(c=>c.id===l.coin_id);
+    const date=new Date((l.closed_at||l.created_at)).toLocaleDateString('en-CA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const isSell=l.trade_type==='SELL';
+    if(!isSell){
+      return`<div class="trade-item"><div class="trade-header"><span class="trade-coin">${coin?.name||l.coin_symbol} <span class="auto-badge"><i class="ti ti-robot"></i> AUTO</span></span><span style="font-size:13px;font-weight:500" class="pos">${l.trade_type} ${curSym()}${l.amount_usd?.toFixed(2)}</span></div><div class="trade-meta">${t('entry')} ${curSym()}${l.price?.toFixed(2)} · ${date}</div></div>`;
+    }
+    const pct=l.amount_usd?((l.pnl/l.amount_usd)*100):0;
+    return`<div class="trade-item"><div class="trade-header"><span class="trade-coin">${coin?.name||l.coin_symbol} <span class="auto-badge"><i class="ti ti-robot"></i> AUTO</span></span><span class="trade-pnl ${l.pnl>=0?'pos':'neg'}">${l.pnl>=0?'+':''}${curSym()}${l.pnl.toFixed(2)} (${pct>=0?'+':''}${pct.toFixed(1)}%)</span></div><div class="trade-meta">${t('entry')} ${curSym()}${l.entry_price?.toFixed(2)} → ${curSym()}${l.exit_price?.toFixed(2)} · ${t('totalFees')} ${curSym()}${l.fee?.toFixed(3)} · ${date}</div></div>`;
+  }).join('');
   // Exclusion list
   const exTitle=document.getElementById('lExcludeTitle');if(exTitle)exTitle.textContent=t('excludeTitle');
   const exDesc=document.getElementById('lExcludeDesc');if(exDesc)exDesc.textContent=t('excludeDesc');
