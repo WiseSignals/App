@@ -37,7 +37,8 @@
 }}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg-tertiary);color:var(--text-primary);min-height:100vh}
 .app{max-width:480px;margin:0 auto;background:var(--bg-tertiary);min-height:100vh;padding-bottom:80px}
-.header{background:var(--bg-primary);padding:1rem 1rem 0.5rem;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--border);position:sticky;top:0;z-index:10}
+.sticky-top{position:sticky;top:0;z-index:10}
+.header{background:var(--bg-primary);padding:1rem 1rem 0.5rem;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--border)}
 .title{font-size:18px;font-weight:600;color:var(--text-primary)}
 .subtitle{font-size:11px;color:var(--text-tertiary)}
 .refresh-btn{display:flex;align-items:center;gap:5px;background:transparent;border:0.5px solid var(--border-strong);border-radius:var(--radius-md);padding:6px 12px;font-size:13px;color:var(--text-primary);cursor:pointer}
@@ -157,22 +158,24 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
 </head>
 <body>
 <div class="app">
-  <div class="header">
-    <div><div class="title">WiseSignals</div><div class="subtitle" id="lastUpdate">...</div></div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <span id="modeBadge" style="display:none;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;letter-spacing:0.03em"></span>
-      <span id="autoRealBadge" title="Auto-trade is placing real Kraken orders, even if you're viewing paper mode" style="display:none;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;letter-spacing:0.03em;background:var(--red-bg);color:var(--red-text);border:0.5px solid var(--red)">🤖⚡ AUTO REAL</span>
-      <button class="refresh-btn" onclick="fetchData()" id="refreshBtn"><i class="ti ti-refresh"></i> <span id="refreshTxt"></span></button>
+  <div class="sticky-top">
+    <div class="header">
+      <div><div class="title">WiseSignals</div><div class="subtitle" id="lastUpdate">...</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="modeBadge" style="display:none;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;letter-spacing:0.03em"></span>
+        <span id="autoRealBadge" title="Auto-trade is placing real Kraken orders, even if you're viewing paper mode" style="display:none;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;letter-spacing:0.03em;background:var(--red-bg);color:var(--red-text);border:0.5px solid var(--red)">🤖⚡ AUTO REAL</span>
+        <button class="refresh-btn" onclick="fetchData()" id="refreshBtn"><i class="ti ti-refresh"></i> <span id="refreshTxt"></span></button>
+      </div>
     </div>
-  </div>
-  <div class="timer-bar"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
-  <div class="tabs" id="mainTabs">
-    <button class="tab active" onclick="showTab('signals')" id="tab-signals-btn"></button>
-    <button class="tab" onclick="showTab('portfolio')" id="tab-portfolio-btn"></button>
-    <button class="tab" onclick="showTab('history')" id="tab-history-btn"></button>
-    <button class="tab" onclick="showTab('auto')" id="tab-auto-btn"></button>
-    <button class="tab" onclick="showTab('profile')" id="tab-profile-btn">👤</button>
-    <button class="tab" onclick="showTab('settings')" id="tab-settings-btn"></button>
+    <div class="timer-bar"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+    <div class="tabs" id="mainTabs">
+      <button class="tab active" onclick="showTab('signals')" id="tab-signals-btn"></button>
+      <button class="tab" onclick="showTab('portfolio')" id="tab-portfolio-btn"></button>
+      <button class="tab" onclick="showTab('history')" id="tab-history-btn"></button>
+      <button class="tab" onclick="showTab('auto')" id="tab-auto-btn"></button>
+      <button class="tab" onclick="showTab('profile')" id="tab-profile-btn">👤</button>
+      <button class="tab" onclick="showTab('settings')" id="tab-settings-btn"></button>
+    </div>
   </div>
 
   <div id="tab-signals" class="panel active">
