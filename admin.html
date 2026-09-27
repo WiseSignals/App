@@ -446,10 +446,30 @@ async function renderInvites(){
     const expired=inv.expires_at<now;const used=!!inv.used;
     const status=used?'Used':expired?'Expired':'Active';
     const statusColor=used?'var(--text3)':expired?'var(--red)':'var(--green)';
+    // Who actually redeemed this, and are they still around — a used
+    // invite used to look identical whether it became a real ongoing user
+    // or one that signed up once and vanished. used_by_status/last_login
+    // come straight from that user's own row (see the admin/invites join),
+    // so this answers "still active, or safe to clean up" at a glance.
+    let redeemedLine='';
+    if(used){
+      if(inv.used_by_email){
+        const disabled=inv.used_by_status==='disabled';
+        const neverLoggedIn=!inv.used_by_last_login;
+        const loginStr=neverLoggedIn?'never logged in':`last login ${new Date(inv.used_by_last_login).toLocaleDateString('en-CA')}`;
+        const flagColor=disabled?'var(--red)':neverLoggedIn?'var(--amber)':'var(--green)';
+        redeemedLine=`<div class="invite-meta" style="color:${flagColor}">→ ${inv.used_by_name||'Unknown'} (${inv.used_by_email}) · ${disabled?'Disabled':'Active'} · ${loginStr}</div>`;
+      }else{
+        // used_by is set but no matching user row — the account was deleted
+        // since redeeming this invite. Definitely safe to clean up.
+        redeemedLine=`<div class="invite-meta" style="color:var(--red)">→ Redeeming account no longer exists — safe to delete</div>`;
+      }
+    }
     return`<div class="invite-row">
       <div style="flex:1;min-width:0">
         <div class="invite-code">${inv.code}</div>
         <div class="invite-meta" style="color:${statusColor}">${status} · Plan: ${inv.plan?.toUpperCase()||'FREE'} · Expires: ${new Date(inv.expires_at).toLocaleDateString('en-CA')}</div>
+        ${redeemedLine}
       </div>
       <div style="display:flex;gap:6px">
         ${!used&&!expired?`<button class="btn btn-ghost btn-sm" onclick="copyInviteCodeOnly('${inv.code}')">Copy Code</button>
