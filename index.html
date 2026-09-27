@@ -1956,7 +1956,17 @@ async function renderCoins(data){
     const dispPrice=cv(d.current_price);
     const price=dispPrice>=1000?dispPrice.toLocaleString('en-US',{maximumFractionDigits:0}):dispPrice>=1?dispPrice.toFixed(2):dispPrice.toFixed(4);
     const posData=hasPos?getHeldPosition(coin.id):null;
-    const posVal=hasPos?posData.units*cv(d.current_price):0;
+    // Real mode: use the value the API already computed (posData.value),
+    // don't recompute from d.current_price — that's CoinGecko's cached
+    // price, which can go stale independent of our own fetch cron (CoinGecko
+    // itself not updating a specific coin's data for hours at a time,
+    // confirmed live with Ethena reading ~3% low against Kraken's own
+    // price). The backend now values real positions off Kraken's own live
+    // ticker instead (see krakenService.js's getLiveTickerPriceUsd) — recomputing
+    // here with the CoinGecko price would silently throw that fix away.
+    // Paper has no such live-exchange price to defer to, so it still uses
+    // the shared current_price feed, same as before.
+    const posVal=hasPos?(isRealMode?posData.value:posData.units*cv(d.current_price)):0;
     // Paper always has a cost basis (portfolio.entry_price, weighted-averaged
     // on every buy). Real Kraken positions have none natively — the backend
     // reconstructs an approximate one from this app's own real_orders history
