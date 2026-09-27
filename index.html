@@ -1382,7 +1382,18 @@ function calcRSI(prices,period=14){
 function calcMA(prices,period){if(prices.length<period)return null;return prices.slice(-period).reduce((a,b)=>a+b,0)/period;}
 function calcVolRatio(vols){if(vols.length<8)return null;const r=vols[vols.length-1],avg=vols.slice(-8,-1).reduce((a,b)=>a+b,0)/7;return avg>0?r/avg:null;}
 
+// RSI measures the ratio of up-vs-down closes, not the size of the move —
+// meaningless for a stablecoin, whose real price barely ticks at all. Noise-
+// level wiggles can still swing RSI to a "textbook" overbought/oversold
+// reading with zero real signal behind it — mirrors the same guard in the
+// backend's priceService.js (STABLECOIN_IDS), so the badge shown here never
+// disagrees with what auto-trade/Telegram are (correctly, now) not acting on.
+const STABLECOIN_IDS=new Set(['usd-coin','tether','dai','usdd','true-usd','frax','first-digital-usd','paypal-usd']);
 async function analyzeReal(coinId,price,change,high,low){
+  if(STABLECOIN_IDS.has(coinId)){
+    const range=high-low,pos=range>0?(price-low)/range:0.5;
+    return{signal:'HOLD',strength:'',score:0,rsi:'—',ma7:null,ma25:null,volRatio:'—',trend:'stable',reason:t('noSignal'),pos:(pos*100).toFixed(0)};
+  }
   const strategy=appSettings.trading_strategy==='scalp'?'scalp':'longterm';
   const hist=strategy==='scalp'?await fetchHistoricalScalp(coinId):await fetchHistorical(coinId);
   if(!hist||hist.prices.length<15)return analyzeFallback(price,change,high,low);
