@@ -405,11 +405,19 @@ function openEditUser(id){
 
 async function updateUser(){
   const id=document.getElementById('editUserId').value;
+  const u=usersCache.find(x=>x.id===id);
   const name=document.getElementById('editName').value.trim();
   const plan=document.getElementById('editPlan').value;
   const status=document.getElementById('editStatus').value;
   const extendDays=parseInt(document.getElementById('editExpiry').value);
   const newPassword=document.getElementById('editPwd').value;
+  // Only confirms the specific transition that actually locks someone out —
+  // going FROM active/expired TO disabled — not every save through this
+  // modal (renaming a user or extending their expiry isn't destructive and
+  // shouldn't need a click-through every time).
+  if(u&&u.status!=='disabled'&&status==='disabled'){
+    if(!confirm(`Disable ${u.name||u.email}'s account? They will be signed out and unable to log back in until re-enabled.`))return;
+  }
   const body={name,plan,status};
   if(extendDays>0)body.extendDays=extendDays;
   if(newPassword&&newPassword.length>=8)body.newPassword=newPassword;
@@ -422,6 +430,9 @@ async function updateUser(){
 async function toggleUser(id){
   const u=usersCache.find(x=>x.id===id);if(!u)return;
   const newStatus=u.status==='disabled'?'active':'disabled';
+  // Re-enabling is a corrective, non-destructive action — no confirm needed
+  // for that direction, only for disabling (locks the account out).
+  if(newStatus==='disabled'&&!confirm(`Disable ${u.name||u.email}'s account? They will be signed out and unable to log back in until re-enabled.`))return;
   try{
     await adminApiFetch('/api/admin/users/'+id,{method:'PUT',body:JSON.stringify({status:newStatus})});
     await renderUsers();await updateStats();showToast(`User ${newStatus} ✅`);
@@ -429,7 +440,8 @@ async function toggleUser(id){
 }
 
 async function deleteUser(id){
-  if(!confirm('Delete this user? This cannot be undone.'))return;
+  const u=usersCache.find(x=>x.id===id);
+  if(!confirm(`Permanently delete ${u?.name||u?.email||'this user'}'s account? This cannot be undone.`))return;
   try{
     await adminApiFetch('/api/admin/users/'+id,{method:'DELETE'});
     await renderUsers();await updateStats();showToast('User deleted');

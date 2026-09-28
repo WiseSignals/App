@@ -1071,10 +1071,12 @@ async function disconnectTelegram(){
 }
 
 let hasActiveKrakenKey=false;
+let apiKeysCache=[];
 async function renderApiKeys(){
   const el=document.getElementById('apiKeysList');if(!el)return;
   let keys=[];
   try{keys=await apiFetch('/api/user/api-keys');}catch(e){el.innerHTML=`<div style="font-size:12px;color:var(--red-text);text-align:center;padding:8px">Could not load API keys.</div>`;return;}
+  apiKeysCache=keys;
   hasActiveKrakenKey=keys.some(k=>k.is_active);
   renderPortfolioModeToggle();
   if(!keys.length){el.innerHTML=`<div style="font-size:12px;color:var(--text-tertiary);text-align:center;padding:8px">No API keys added yet.</div>`;return;}
@@ -1110,12 +1112,30 @@ async function saveApiKey(){
 }
 
 async function deleteApiKey(id){
-  if(!confirm('Delete this API key?'))return;
+  const key=apiKeysCache.find(k=>k.id===id);
+  const realTradeActive=currentUser?.trading_mode==='real'||currentUser?.auto_real_override;
+  // A plain "Delete this API key?" gave no hint that deleting the ACTIVE key
+  // (the one actually wired into real trading/auto-trade right now) has an
+  // immediate real-money consequence — spelling that out here specifically
+  // when it applies, instead of a generic confirm for every key regardless
+  // of whether it's the one actually in use.
+  const msg=key?.is_active
+    ? (realTradeActive
+        ? `Delete "${key.name}"? This is your ACTIVE Kraken key and real trading/auto-trade is currently on — deleting it will immediately stop the app from placing or managing any real orders until you add and activate another key.`
+        : `Delete "${key.name}"? This is your active Kraken API key — real trading won't work again until you add and activate another one.`)
+    : `Delete "${key?.name||'this API key'}"?`;
+  if(!confirm(msg))return;
   try{await apiFetch('/api/user/api-keys/'+id,{method:'DELETE'});renderApiKeys();showToast('API key deleted');}
   catch(e){showToast(e.message||'Could not delete key','red');}
 }
 
 async function setActiveKey(id){
+  const key=apiKeysCache.find(k=>k.id===id);
+  const realTradeActive=currentUser?.trading_mode==='real'||currentUser?.auto_real_override;
+  const msg=realTradeActive
+    ? `Switch to "${key?.name||'this key'}" as your active Kraken API key? Real trading and auto-trade will immediately start using this key's account instead of the one currently active.`
+    : `Switch to "${key?.name||'this key'}" as your active Kraken API key?`;
+  if(!confirm(msg))return;
   try{await apiFetch('/api/user/api-keys/'+id+'/activate',{method:'PUT'});renderApiKeys();showToast('✅ Active key updated');}
   catch(e){showToast(e.message||'Could not update key','red');}
 }
