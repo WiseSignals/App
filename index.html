@@ -119,6 +119,16 @@ select,input[type=number]{font-size:13px;padding:5px 8px;border-radius:var(--rad
 .loading-state{text-align:center;padding:2rem;color:var(--text-secondary);font-size:14px}
 .error-banner{margin:0.5rem 1rem;background:var(--red-bg);border-radius:var(--radius-md);padding:0.75rem 1rem;font-size:13px;color:var(--red-text);border:0.5px solid var(--red)}
 .auto-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 6px;border-radius:var(--radius-md);background:var(--blue-bg);color:var(--blue-text);font-weight:500;margin-left:4px}
+/* Distinct from .auto-badge on purpose — that one means "auto-trade
+   actually bought this" (shown in the holding-line/position ribbon/detail
+   panel, always alongside units you actually hold). This one means "auto-
+   trade has a signal queued for this coin, executing soon" — can appear on
+   a coin you don't hold at all yet, which is exactly what confused a user
+   into thinking the app had bought something it hadn't. Amber (this app's
+   existing "pending/about to happen" color, same family as the Auto tab's
+   queue cards) instead of the held-badge's blue, plus its own icon and
+   label, so the two are never mistakable for each other. */
+.queued-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 6px;border-radius:var(--radius-md);background:var(--amber-bg);color:var(--amber-text);font-weight:500;margin-left:4px;cursor:default}
 .auto-queue-item{margin:0.35rem 1rem;background:var(--blue-bg);border-radius:var(--radius-lg);border:0.5px solid var(--blue);padding:0.75rem 1rem}
 .chart-container{margin-top:10px;padding:10px;background:var(--bg-secondary);border-radius:var(--radius-md);border:0.5px solid var(--border)}
 .chart-tabs{display:flex;gap:4px;margin-bottom:8px}
@@ -672,7 +682,7 @@ en:{
   aboveAvg:'above avg volume',belowAvg:'below avg volume',uptrend:'uptrend',downtrend:'downtrend',sideways:'sideways',
   allSignals:'All signals',moderatePlus:'Moderate+',strongOnly:'Strong only',anyMove:'Any',
   safe:'Safe (10%)',moderate:'Moderate (25%)',suggested:'Suggested',aggressive:'Aggressive (50%)',
-  autoExecuted:'Auto-trade executed',queued:'Queued at',executesIn:'executes in',
+  autoExecuted:'Auto-trade executed',queued:'Queued at',executesIn:'executes in',queuedBadge:'Queued',queuedTooltip:'{type} queued — executes in ~{min} min if the signal holds',
   feeNote:'Fee: 0.26% deducted on execution',
   holdingNote:'holding',
   paperPortfolio:'Paper portfolio',
@@ -767,7 +777,7 @@ fa:{
   aboveAvg:'حجم بالای میانگین',belowAvg:'حجم زیر میانگین',uptrend:'روند صعودی',downtrend:'روند نزولی',sideways:'خنثی',
   allSignals:'همه سیگنال‌ها',moderatePlus:'متوسط و بالاتر',strongOnly:'فقط قوی',anyMove:'هر مقدار',
   safe:'ایمن (۱۰٪)',moderate:'متوسط (۲۵٪)',suggested:'پیشنهادی',aggressive:'تهاجمی (۵۰٪)',
-  autoExecuted:'معامله اتوماتیک اجرا شد',queued:'در صف از',executesIn:'اجرا می‌شود در',
+  autoExecuted:'معامله اتوماتیک اجرا شد',queued:'در صف از',executesIn:'اجرا می‌شود در',queuedBadge:'در صف',queuedTooltip:'{type} در صف است — در حدود {min} دقیقه دیگر اجرا می‌شود، اگر سیگنال باقی بماند',
   feeNote:'کارمزد: ۰.۲۶٪ از معامله',
   holdingNote:'در دست',
   paperPortfolio:'پورتفولیوی مجازی',
@@ -862,7 +872,7 @@ es:{
   aboveAvg:'volumen sobre promedio',belowAvg:'volumen bajo promedio',uptrend:'tendencia alcista',downtrend:'tendencia bajista',sideways:'lateral',
   allSignals:'Todas las señales',moderatePlus:'Moderada+',strongOnly:'Solo fuertes',anyMove:'Cualquiera',
   safe:'Seguro (10%)',moderate:'Moderado (25%)',suggested:'Sugerido',aggressive:'Agresivo (50%)',
-  autoExecuted:'Auto-trade ejecutado',queued:'En cola desde',executesIn:'ejecuta en',
+  autoExecuted:'Auto-trade ejecutado',queued:'En cola desde',executesIn:'ejecuta en',queuedBadge:'En cola',queuedTooltip:'{type} en cola — se ejecuta en ~{min} min si la señal se mantiene',
   feeNote:'Comisión: 0.26% deducido al ejecutar',
   holdingNote:'en cartera',
   paperPortfolio:'Portafolio de prueba',
@@ -1980,7 +1990,7 @@ async function renderCoins(data){
     const autoBlocked=!!d.autoBuyBlocked&&sig.signal==='BUY';
     const isRealMode=tradingMode==='real';
     const hasPos=!!getHeldPosition(coin.id);
-    const isAutoQueued=autoQueue.some(q=>q.coin_id===coin.id);
+    const queuedItem=autoQueue.find(q=>q.coin_id===coin.id);
     const cc=d.price_change_percentage_24h>=0?'pos':'neg';
     const dsc=filtered?(sig.signal==='BUY'?'signal-buy':sig.signal==='SELL'?'signal-sell':'signal-hold'):'signal-hold';
     const dbc=filtered?(sig.signal==='BUY'?'badge-buy':sig.signal==='SELL'?'badge-sell':'badge-hold'):'badge-hold';
@@ -2129,7 +2139,11 @@ async function renderCoins(data){
       <div class="coin-row">
         <div class="coin-icon" style="background:${coin.bg};color:${coin.tc}">${coin.symbol.substring(0,2)}</div>
         <div class="coin-info">
-          <div class="coin-name">${coin.name}${hasPos?` <span style="font-size:10px;color:var(--green)">● ${t('holdingNote')}</span>`:''}${isAutoQueued?' <span class="auto-badge"><i class="ti ti-robot"></i></span>':''}</div>
+          <div class="coin-name">${coin.name}${hasPos?` <span style="font-size:10px;color:var(--green)">● ${t('holdingNote')}</span>`:''}${queuedItem?(()=>{
+            const mins=Math.max(0,Math.round((queuedItem.execute_at-Date.now())/60000));
+            const tooltip=t('queuedTooltip').replace('{type}',`${queuedItem.signal_strength} ${queuedItem.signal_type}`).replace('{min}',mins);
+            return` <span class="queued-badge" title="${tooltip}"><i class="ti ti-clock"></i> ${t('queuedBadge')}</span>`;
+          })():''}</div>
           <div class="coin-price">${curSym()}${price}</div>${livePnl}
           ${autoBlocked?`<div class="auto-blocked-note"><i class="ti ti-alert-triangle"></i> ${t('autoBlockedNote')}</div>`:''}
           ${hasPos?(()=>{
