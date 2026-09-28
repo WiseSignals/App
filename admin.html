@@ -354,7 +354,16 @@ async function renderUsers(){
     const expiryStr=!u.expires_at?'Never':new Date(u.expires_at).toLocaleDateString('en-CA');
     const planClass=`plan-${u.plan||'free'}`;
     const ts=tradeStatsCache[u.id];
-    const activityLine=ts?`<div class="user-meta">📊 ${ts.tradesWeek} trades/7d · ${ts.tradesMonth} trades/30d · P&L: <span style="color:${ts.pnlAllTimeUsd>=0?'var(--green)':'var(--red)'};font-weight:600">${ts.pnlAllTimeUsd>=0?'+':''}$${ts.pnlAllTimeUsd.toFixed(2)}</span></div>`:'';
+    // Always USD regardless of the user's own account currency — deliberate,
+    // not a bug: this is a cross-user ops view, and showing every user in
+    // whatever currency they personally picked would make the numbers
+    // incomparable to each other. But it was previously shown with just a
+    // bare "$", easy to mistake for the user's own currency (e.g. CAD) when
+    // cross-checking against the app itself — confirmed live, a -4.65 CAD
+    // History-tab figure is this same -3.28 USD, just unlabeled. Labeled
+    // explicitly now instead of adding a per-admin-view currency selector,
+    // since the whole point of this figure is a common unit across users.
+    const activityLine=ts?`<div class="user-meta" title="Always shown in USD for comparison across users, regardless of each user's own account currency">📊 ${ts.tradesWeek} trades/7d · ${ts.tradesMonth} trades/30d · P&L: <span style="color:${ts.pnlAllTimeUsd>=0?'var(--green)':'var(--red)'};font-weight:600">${ts.pnlAllTimeUsd>=0?'+':''}$${ts.pnlAllTimeUsd.toFixed(2)} USD</span></div>`:'';
     return`<div class="user-row">
       <div class="user-avatar">${(u.name||'U').charAt(0).toUpperCase()}</div>
       <div class="user-info">
