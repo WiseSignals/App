@@ -134,6 +134,10 @@ select,input[type=number]{font-size:13px;padding:5px 8px;border-radius:var(--rad
 .chart-tabs{display:flex;gap:4px;margin-bottom:8px}
 .chart-tab{padding:4px 10px;font-size:11px;border-radius:var(--radius-md);cursor:pointer;border:0.5px solid var(--border);background:var(--bg-primary);color:var(--text-secondary)}
 .chart-tab.active{background:var(--green-bg);color:var(--green-text);border-color:var(--green);font-weight:500}
+.history-filter-tab{display:inline-flex;align-items:center;gap:4px}
+.history-filter-tab.active-win{background:var(--green-bg);color:var(--green-text);border-color:var(--green);font-weight:500}
+.history-filter-tab.active-loss{background:var(--red-bg);color:var(--red-text);border-color:var(--red);font-weight:500}
+.lp-circle{width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block}
 canvas{width:100%!important;border-radius:var(--radius-md)}
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:var(--radius-lg);font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:pre-line;max-width:90vw;width:max-content;text-align:center;line-height:1.4}
 .toast.show{opacity:1}
@@ -235,6 +239,22 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
     </div>
     <div id="periodReport" style="margin:0 1rem 0.5rem;background:var(--bg-primary);border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:1rem"></div>
     <div class="section-label" id="lClosedTrades"></div>
+    <div style="padding:0 1rem 0.5rem">
+      <input type="text" id="historySearchInput" oninput="onHistorySearchInput(this.value)" style="width:100%;padding:8px 12px;border-radius:var(--radius-md);border:0.5px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-size:13px;box-sizing:border-box">
+    </div>
+    <div style="display:flex;gap:6px;padding:0 1rem 0.5rem;flex-wrap:wrap;align-items:center">
+      <div class="chart-tab history-filter-tab active" data-hfilter="all" onclick="setHistoryFilter('all')" id="hfAll"></div>
+      <div class="chart-tab history-filter-tab" data-hfilter="win" onclick="setHistoryFilter('win')" id="hfWin"><span class="lp-circle" style="background:var(--green)"></span><span id="hfWinLabel"></span></div>
+      <div class="chart-tab history-filter-tab" data-hfilter="loss" onclick="setHistoryFilter('loss')" id="hfLoss"><span class="lp-circle" style="background:var(--red)"></span><span id="hfLossLabel"></span></div>
+      <div class="chart-tab history-filter-tab" data-hfilter="auto" onclick="setHistoryFilter('auto')" id="hfAuto"></div>
+      <div class="chart-tab history-filter-tab" data-hfilter="manual" onclick="setHistoryFilter('manual')" id="hfManual"></div>
+      <select id="historySortSelect" onchange="setHistorySort(this.value)" style="margin-left:auto;padding:6px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-size:12px">
+        <option value="newest" id="hsNewest"></option>
+        <option value="pnlDesc" id="hsPnlDesc"></option>
+        <option value="pnlAsc" id="hsPnlAsc"></option>
+        <option value="pctDesc" id="hsPctDesc"></option>
+      </select>
+    </div>
     <div id="tradeHistory"></div>
   </div>
 
@@ -620,6 +640,8 @@ en:{
   totalValue:'Total value',totalPnl:'Total P&L',cashAvailable:'Cash available',winRate:'Win rate',
   tradesTaken:'Trades taken',inPositions:'In positions',openPositions:'Open positions',
   noPositions:'No open positions yet.',closedTrades:'Closed trades',noTrades:'No closed trades yet.\nAccept a signal to start.',
+  historySearchPlaceholder:'Search by coin name or symbol...',filterAll:'All',filterWins:'Wins',filterLosses:'Losses',filterAuto:'Auto',filterManual:'Manual',
+  sortNewest:'Newest first',sortPnlDesc:'Best P&L first',sortPnlAsc:'Worst P&L first',sortPctDesc:'Best % return first',
   historyDesc:'Completed trade cycles only — a buy followed by its matching sell, with the realized profit or loss (manual or auto). Currently open positions aren\'t closed yet, so they show in Portfolio instead.',
   tradeClosedWin:'Trade closed',
   today:'Today',last3Days:'Last 3 Days',last7Days:'Last 7 Days',last30Days:'Last 30 Days',allTime:'All Time',
@@ -715,6 +737,8 @@ fa:{
   totalValue:'ارزش کل',totalPnl:'سود/زیان کل',cashAvailable:'موجودی نقد',winRate:'نرخ موفقیت',
   tradesTaken:'معاملات انجام شده',inPositions:'در موقعیت‌ها',openPositions:'موقعیت‌های باز',
   noPositions:'هنوز موقعیت بازی ندارید.',closedTrades:'معاملات بسته شده',noTrades:'هنوز معامله‌ای بسته نشده.\nیک سیگنال را تأیید کنید.',
+  historySearchPlaceholder:'جستجو بر اساس نام یا نماد کوین...',filterAll:'همه',filterWins:'سودده',filterLosses:'ضررده',filterAuto:'خودکار',filterManual:'دستی',
+  sortNewest:'جدیدترین اول',sortPnlDesc:'بیشترین سود اول',sortPnlAsc:'بیشترین ضرر اول',sortPctDesc:'بیشترین درصد بازده اول',
   historyDesc:'فقط چرخه‌های کامل‌شده معامله — یک خرید به همراه فروش متناظرش، با سود یا زیان تحقق‌یافته (دستی یا خودکار). موقعیت‌های بازِ فعلی هنوز بسته نشده‌اند، پس در تب پورتفولیو نمایش داده می‌شوند.',
   tradeClosedWin:'معامله بسته شد',
   today:'امروز',last3Days:'۳ روز اخیر',last7Days:'۷ روز اخیر',last30Days:'۳۰ روز اخیر',allTime:'همه زمان‌ها',
@@ -810,6 +834,8 @@ es:{
   totalValue:'Valor total',totalPnl:'G/P total',cashAvailable:'Efectivo disponible',winRate:'Tasa de éxito',
   tradesTaken:'Operaciones',inPositions:'En posiciones',openPositions:'Posiciones abiertas',
   noPositions:'Sin posiciones abiertas.',closedTrades:'Operaciones cerradas',noTrades:'Sin operaciones cerradas.\nAcepta una señal para empezar.',
+  historySearchPlaceholder:'Buscar por nombre o símbolo de moneda...',filterAll:'Todas',filterWins:'Ganadoras',filterLosses:'Perdedoras',filterAuto:'Auto',filterManual:'Manual',
+  sortNewest:'Más recientes primero',sortPnlDesc:'Mejor P&L primero',sortPnlAsc:'Peor P&L primero',sortPctDesc:'Mejor % de retorno primero',
   historyDesc:'Solo ciclos de operación completados — una compra seguida de su venta correspondiente, con la ganancia o pérdida realizada (manual o automática). Las posiciones abiertas actuales aún no están cerradas, así que se muestran en Portafolio.',
   tradeClosedWin:'Operación cerrada',
   today:'Hoy',last3Days:'Últimos 3 días',last7Days:'Últimos 7 días',last30Days:'Últimos 30 días',allTime:'Todo el tiempo',
@@ -928,6 +954,11 @@ function applyLanguage(){
   Object.entries(ptm).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   const lct=document.getElementById('lClosedTrades');if(lct)lct.textContent=t('closedTrades');
   const lhd=document.getElementById('lHistoryDesc');if(lhd)lhd.textContent=t('historyDesc');
+  const hsi=document.getElementById('historySearchInput');if(hsi)hsi.placeholder=t('historySearchPlaceholder');
+  const hfm={hfAll:'filterAll',hfAuto:'filterAuto',hfManual:'filterManual',hfWinLabel:'filterWins',hfLossLabel:'filterLosses'};
+  Object.entries(hfm).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
+  const hsm={hsNewest:'sortNewest',hsPnlDesc:'sortPnlDesc',hsPnlAsc:'sortPnlAsc',hsPctDesc:'sortPctDesc'};
+  Object.entries(hsm).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   // Auto tab
   const am={lAutoTitle:'autoTitle',lAutoEnabled:'autoEnabled',lTradingStrategy:'tradingStrategy',lTradingStrategyDesc:'tradingStrategyDesc',oLongterm:'strategyLongterm',oScalp:'strategyScalp',lStopLoss:'stopLoss',oStopLossCustom:'custom',oStopLossOff:'stopLossOff',lStopLossCustomPct:'customPct',lStopLossDesc:'stopLossDesc',lAutoRealOverride:'autoRealOverride',lAutoRealOverrideDesc:'autoRealOverrideDesc',lMaxOrder:'maxOrder',oMaxUnlimited:'maxOrderUnlimited',oMaxCustom:'custom',lMaxOrderCustomAmt:'customAmt',lMaxOrderDesc:'maxOrderDesc',lDelay:'delayBefore',lDelayScalpNote:'delayScalpNote',lQueuedTrades:'queuedTrades',lAutoLog:'autoLog',lExcludeTitle:'excludeTitle'};
   Object.entries(am).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
@@ -2259,6 +2290,23 @@ function selectPeriod(period){
   document.querySelectorAll('.period-tab').forEach(el=>el.classList.toggle('active',el.dataset.period===period));
   renderHistory();
 }
+// History tab search/filter/sort — deliberately scoped to the trade LIST
+// only, not periodReport's summary stats above it: the summary should
+// always reflect the whole period at a glance, while the list is what the
+// user drills into to find a specific coin or the best/worst trades.
+let historySearch='',historyFilter='all',historySort='newest';
+function onHistorySearchInput(v){historySearch=v.trim().toLowerCase();renderHistory();}
+function setHistoryFilter(f){
+  historyFilter=f;
+  document.querySelectorAll('.history-filter-tab').forEach(el=>{
+    const active=el.dataset.hfilter===f;
+    el.classList.toggle('active',active&&f!=='win'&&f!=='loss');
+    el.classList.toggle('active-win',active&&f==='win');
+    el.classList.toggle('active-loss',active&&f==='loss');
+  });
+  renderHistory();
+}
+function setHistorySort(s){historySort=s;renderHistory();}
 function getPeriodRange(period){
   const now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   if(period==='today'){return{from:today.getTime(),to:now.getTime()};}
@@ -2314,11 +2362,36 @@ function renderHistory(){
     }
   }
   if(!closedTrades.length){if(h)h.innerHTML=`<div class="empty-state">${t('noTrades')}</div>`;return;}
-  if(h)h.innerHTML=periodTrades.map(tr=>{
-    const c=COINS.find(x=>x.id===tr.coin_id),date=new Date(tr.closed_at).toLocaleDateString('en-CA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-    const pct=tr.amount_usd?((tr.pnl/tr.amount_usd)*100).toFixed(2):'0.00';
+
+  // Search/filter/sort apply only to the list below periodReport — see the
+  // note above historySearch's declaration for why the summary stays
+  // whole-period regardless of what's typed/filtered/sorted here.
+  const enriched=periodTrades.map(tr=>{
+    const c=COINS.find(x=>x.id===tr.coin_id);
+    const pct=tr.amount_usd?(tr.pnl/tr.amount_usd)*100:0;
     const tradeType=tr.is_auto?'AUTO':tr.is_manual?'MANUAL':'SIGNAL';
-    return`<div class="trade-item"><div class="trade-header"><span class="trade-coin">${c?c.name:tr.coin_symbol} <span style="font-size:11px;color:var(--text-tertiary)">${tradeType}</span></span><span class="trade-pnl ${tr.pnl>=0?'pos':'neg'}">${tr.pnl>=0?'+':''}${curSym()}${tr.pnl.toFixed(2)} (${pct}%)</span></div><div class="trade-meta">${t('entry')} ${curSym()}${tr.entry_price.toFixed(2)} → ${curSym()}${tr.exit_price.toFixed(2)} · ${t('totalFees')} ${curSym()}${tr.fee.toFixed(3)} · ${date}</div></div>`;
+    return{tr,c,pct,tradeType};
+  });
+  let displayTrades=enriched.filter(({tr,c,tradeType})=>{
+    if(historySearch){
+      const name=(c?c.name:tr.coin_symbol||'').toLowerCase(),sym=(tr.coin_symbol||'').toLowerCase();
+      if(!name.includes(historySearch)&&!sym.includes(historySearch))return false;
+    }
+    if(historyFilter==='win')return tr.pnl>=0;
+    if(historyFilter==='loss')return tr.pnl<0;
+    if(historyFilter==='auto')return tradeType==='AUTO';
+    if(historyFilter==='manual')return tradeType==='MANUAL';
+    return true;
+  });
+  if(historySort==='pnlDesc')displayTrades=[...displayTrades].sort((a,b)=>b.tr.pnl-a.tr.pnl);
+  else if(historySort==='pnlAsc')displayTrades=[...displayTrades].sort((a,b)=>a.tr.pnl-b.tr.pnl);
+  else if(historySort==='pctDesc')displayTrades=[...displayTrades].sort((a,b)=>b.pct-a.pct);
+  // 'newest' needs no re-sort — periodTrades already comes in that order.
+
+  if(h)h.innerHTML=displayTrades.map(({tr,c,pct,tradeType})=>{
+    const date=new Date(tr.closed_at).toLocaleDateString('en-CA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const won=tr.pnl>=0;
+    return`<div class="trade-item"><div class="trade-header"><span class="trade-coin"><span class="lp-circle" style="background:${won?'var(--green)':'var(--red)'};margin-inline-end:6px"></span>${c?c.name:tr.coin_symbol} <span style="font-size:11px;color:var(--text-tertiary)">${tradeType}</span></span><span class="trade-pnl ${won?'pos':'neg'}">${won?'+':''}${curSym()}${tr.pnl.toFixed(2)} (${pct.toFixed(2)}%)</span></div><div class="trade-meta">${t('entry')} ${curSym()}${tr.entry_price.toFixed(2)} → ${curSym()}${tr.exit_price.toFixed(2)} · ${t('totalFees')} ${curSym()}${tr.fee.toFixed(3)} · ${date}</div></div>`;
   }).join('')||`<div class="empty-state">${t('noTradesPeriod')}</div>`;
 }
 
