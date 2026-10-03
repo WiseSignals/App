@@ -292,7 +292,7 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
       <div class="setting-row"><span class="setting-label" id="lMaxOrder"></span>
         <select id="autoMaxOrder" onchange="onAutoMaxOrderChange(this)">
           <option value="0" id="oMaxUnlimited"></option>
-          <option value="10">$10</option><option value="20">$20</option><option value="50">$50</option>
+          <option value="10" id="oMax10">$10</option><option value="20" id="oMax20">$20</option><option value="50" id="oMax50">$50</option>
           <option value="custom" id="oMaxCustom"></option>
         </select>
       </div>
@@ -960,7 +960,7 @@ function applyLanguage(){
   const hsm={hsNewest:'sortNewest',hsPnlDesc:'sortPnlDesc',hsPnlAsc:'sortPnlAsc',hsPctDesc:'sortPctDesc'};
   Object.entries(hsm).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   // Auto tab
-  const am={lAutoTitle:'autoTitle',lAutoEnabled:'autoEnabled',lTradingStrategy:'tradingStrategy',lTradingStrategyDesc:'tradingStrategyDesc',oLongterm:'strategyLongterm',oScalp:'strategyScalp',lStopLoss:'stopLoss',oStopLossCustom:'custom',oStopLossOff:'stopLossOff',lStopLossCustomPct:'customPct',lStopLossDesc:'stopLossDesc',lAutoRealOverride:'autoRealOverride',lAutoRealOverrideDesc:'autoRealOverrideDesc',lMaxOrder:'maxOrder',oMaxUnlimited:'maxOrderUnlimited',oMaxCustom:'custom',lMaxOrderCustomAmt:'customAmt',lMaxOrderDesc:'maxOrderDesc',lDelay:'delayBefore',lDelayScalpNote:'delayScalpNote',lQueuedTrades:'queuedTrades',lAutoLog:'autoLog',lExcludeTitle:'excludeTitle'};
+  const am={lAutoTitle:'autoTitle',lAutoEnabled:'autoEnabled',lTradingStrategy:'tradingStrategy',lTradingStrategyDesc:'tradingStrategyDesc',oLongterm:'strategyLongterm',oScalp:'strategyScalp',lStopLoss:'stopLoss',oStopLossCustom:'customPct',oStopLossOff:'stopLossOff',lStopLossCustomPct:'customPct',lStopLossDesc:'stopLossDesc',lAutoRealOverride:'autoRealOverride',lAutoRealOverrideDesc:'autoRealOverrideDesc',lMaxOrder:'maxOrder',oMaxUnlimited:'maxOrderUnlimited',oMaxCustom:'custom',lMaxOrderCustomAmt:'customAmt',lMaxOrderDesc:'maxOrderDesc',lDelay:'delayBefore',lDelayScalpNote:'delayScalpNote',lQueuedTrades:'queuedTrades',lAutoLog:'autoLog',lExcludeTitle:'excludeTitle'};
   Object.entries(am).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   const maxRisk=currentUser?.plan==='platinum'?100:50;
   const lrl=document.getElementById('lRiskLevel');if(lrl)lrl.textContent=t('riskLevel').replace('{m}',maxRisk);
@@ -1218,7 +1218,7 @@ async function saveSetting(k,v){
       await refreshFxRate();
       await Promise.all([refreshPortfolio(),refreshTrades()]);
       await fetchData();
-      renderPortfolio();renderHistory();loadSettings();
+      renderPortfolio();renderHistory();loadSettings();renderAutoTab();
       if(tradingMode==='real')await refreshRealPortfolio();
     }else if(k==='autoEnabled'){
       appSettings.auto_trade_enabled=v;
@@ -2426,6 +2426,13 @@ function renderAutoTab(){
   const risk=document.getElementById('autoRisk');if(risk)risk.value=appSettings.auto_risk_pct||25;
   const maxOrder=document.getElementById('autoMaxOrder'),maxOrderCustom=document.getElementById('autoMaxOrderCustom'),maxOrderRow=document.getElementById('rowMaxOrderCustom');
   if(maxOrder){
+    // The cap is stored/applied in the user's OWN selected currency (see
+    // maxOrderCapUsd in autoTradeEngine.js), so every label here shows that
+    // currency's symbol instead of a hardcoded "$".
+    const sym=curSym();
+    [['oMax10',10],['oMax20',20],['oMax50',50]].forEach(([id,n])=>{const el=document.getElementById(id);if(el)el.textContent=sym+n;});
+    const omc=document.getElementById('oMaxCustom');if(omc)omc.textContent=t('custom').replace('($)','('+sym+')');
+    const lmc=document.getElementById('lMaxOrderCustomAmt');if(lmc)lmc.textContent=t('customAmt').replace('($)','('+sym+')');
     const mv=appSettings.auto_max_order_usd||0;
     const isPreset=[0,10,20,50].includes(mv);
     maxOrder.value=isPreset?String(mv):'custom';
