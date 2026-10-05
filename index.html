@@ -642,6 +642,7 @@ en:{
   noPositions:'No open positions yet.',closedTrades:'Closed trades',noTrades:'No closed trades yet.\nAccept a signal to start.',
   historySearchPlaceholder:'Search by coin name or symbol...',filterAll:'All',filterWins:'Wins',filterLosses:'Losses',filterAuto:'Auto',filterManual:'Manual',
   sortNewest:'Newest first',sortPnlDesc:'Best P&L first',sortPnlAsc:'Worst P&L first',sortPctDesc:'Best % return first',
+  breakoutReason:'Breakout: price just hit a fresh high inside a confirmed uptrend (buying strength, not a dip).',trendHold:'A strong trend is in progress, so the usual overbought/oversold signal is being held back.',
   historyDesc:'Completed trade cycles only — a buy followed by its matching sell, with the realized profit or loss (manual or auto). Currently open positions aren\'t closed yet, so they show in Portfolio instead.',
   tradeClosedWin:'Trade closed',
   today:'Today',last3Days:'Last 3 Days',last7Days:'Last 7 Days',last30Days:'Last 30 Days',allTime:'All Time',
@@ -739,6 +740,7 @@ fa:{
   noPositions:'هنوز موقعیت بازی ندارید.',closedTrades:'معاملات بسته شده',noTrades:'هنوز معامله‌ای بسته نشده.\nیک سیگنال را تأیید کنید.',
   historySearchPlaceholder:'جستجو بر اساس نام یا نماد کوین...',filterAll:'همه',filterWins:'سودده',filterLosses:'ضررده',filterAuto:'خودکار',filterManual:'دستی',
   sortNewest:'جدیدترین اول',sortPnlDesc:'بیشترین سود اول',sortPnlAsc:'بیشترین ضرر اول',sortPctDesc:'بیشترین درصد بازده اول',
+  breakoutReason:'شکست سقف: قیمت در یک روند صعودی تأییدشده تازه به سقف جدید رسیده (خرید قدرت، نه خرید در افت).',trendHold:'یک روند قوی در جریان است، بنابراین سیگنال معمول اشباع خرید/فروش فعلاً نگه داشته شده.',
   historyDesc:'فقط چرخه‌های کامل‌شده معامله — یک خرید به همراه فروش متناظرش، با سود یا زیان تحقق‌یافته (دستی یا خودکار). موقعیت‌های بازِ فعلی هنوز بسته نشده‌اند، پس در تب پورتفولیو نمایش داده می‌شوند.',
   tradeClosedWin:'معامله بسته شد',
   today:'امروز',last3Days:'۳ روز اخیر',last7Days:'۷ روز اخیر',last30Days:'۳۰ روز اخیر',allTime:'همه زمان‌ها',
@@ -836,6 +838,7 @@ es:{
   noPositions:'Sin posiciones abiertas.',closedTrades:'Operaciones cerradas',noTrades:'Sin operaciones cerradas.\nAcepta una señal para empezar.',
   historySearchPlaceholder:'Buscar por nombre o símbolo de moneda...',filterAll:'Todas',filterWins:'Ganadoras',filterLosses:'Perdedoras',filterAuto:'Auto',filterManual:'Manual',
   sortNewest:'Más recientes primero',sortPnlDesc:'Mejor P&L primero',sortPnlAsc:'Peor P&L primero',sortPctDesc:'Mejor % de retorno primero',
+  breakoutReason:'Ruptura: el precio acaba de marcar un nuevo máximo dentro de una tendencia alcista confirmada (comprar fuerza, no una caída).',trendHold:'Hay una tendencia fuerte en curso, así que la señal habitual de sobrecompra/sobreventa se está reteniendo.',
   historyDesc:'Solo ciclos de operación completados — una compra seguida de su venta correspondiente, con la ganancia o pérdida realizada (manual o automática). Las posiciones abiertas actuales aún no están cerradas, así que se muestran en Portafolio.',
   tradeClosedWin:'Operación cerrada',
   today:'Hoy',last3Days:'Últimos 3 días',last7Days:'Últimos 7 días',last30Days:'Últimos 30 días',allTime:'Todo el tiempo',
@@ -1452,6 +1455,27 @@ function calcRSI(prices,period=14){
 }
 function calcMA(prices,period){if(prices.length<period)return null;return prices.slice(-period).reduce((a,b)=>a+b,0)/period;}
 function calcVolRatio(vols){if(vols.length<8)return null;const r=vols[vols.length-1],avg=vols.slice(-8,-1).reduce((a,b)=>a+b,0)/7;return avg>0?r/avg:null;}
+// Mirrors priceService.js's calcADX (close-price-only ADX) and its
+// ADX_TREND_THRESHOLD/ADX_STRONG_TREND_THRESHOLD/DONCHIAN_PERIOD — this
+// screen computes its own badge instead of reading the backend's, so any
+// signal logic added server-side MUST be mirrored here or the badge starts
+// disagreeing with what auto-trade/Telegram actually act on (confirmed live:
+// XRP showed Strong SELL here while the backend's ADX filter correctly held
+// it back as HOLD during a strong uptrend, so nothing was sold).
+function calcADX(prices,period=14){
+  const n=prices.length-1;if(n<period*2)return null;
+  const pdm=[],mdm=[],tr=[];
+  for(let i=1;i<prices.length;i++){const c=prices[i]-prices[i-1];pdm.push(c>0?c:0);mdm.push(c<0?-c:0);tr.push(Math.abs(c));}
+  const dx=[];
+  for(let end=period;end<=n;end++){
+    let sp=0,sm=0,st=0;for(let j=end-period;j<end;j++){sp+=pdm[j];sm+=mdm[j];st+=tr[j];}
+    if(st===0){dx.push(0);continue;}
+    const pi=100*sp/st,mi=100*sm/st;dx.push(100*Math.abs(pi-mi)/(pi+mi));
+  }
+  if(dx.length<period)return null;
+  return dx.slice(-period).reduce((a,b)=>a+b,0)/period;
+}
+const ADX_TREND_THRESHOLD=25,ADX_STRONG_TREND_THRESHOLD=40,DONCHIAN_PERIOD=20;
 
 // RSI measures the ratio of up-vs-down closes, not the size of the move —
 // meaningless for a stablecoin, whose real price barely ticks at all. Noise-
@@ -1509,6 +1533,21 @@ async function analyzeReal(coinId,price,change,high,low){
   if(am7===false&&am25===false)bs+=1;
   if(am7===true&&am25===true)ss+=1;
   if(volRatio!==null&&volRatio>1.5){bs+=bs>0?1:0;ss+=ss>0?1:0;}
+  // ADX trend-strength filter + Donchian breakout — mirrors scoreFromSeries
+  // in priceService.js exactly (see calcADX's note above).
+  const isUp=!!(am7&&am25),isDown=!am7&&!am25;
+  const adx=calcADX(prices,14);
+  let held=false;
+  if(adx!==null&&adx>=ADX_TREND_THRESHOLD){
+    const dampen=adx>=ADX_STRONG_TREND_THRESHOLD?Infinity:2;
+    if(isDown&&bs>0){const b=bs;bs=Math.max(0,bs-dampen);if(b>=2&&bs<b)held=true;}
+    else if(isUp&&ss>0){const s=ss;ss=Math.max(0,ss-dampen);if(s>=2&&ss<s)held=true;}
+  }
+  const priorWindow=histConverted.slice(-DONCHIAN_PERIOD);
+  let bm=0;
+  if(priorWindow.length===DONCHIAN_PERIOD&&cp>Math.max(...priorWindow)&&adx!==null&&adx>=ADX_TREND_THRESHOLD&&isUp){
+    bm=2;if(volRatio!==null&&volRatio>1.3)bm+=1;if(adx>=ADX_STRONG_TREND_THRESHOLD)bm+=1;
+  }
   const rStr=rsi!==null?rsi.toFixed(0):'~'+Math.round(rv);
   const m7s=ma7!==null?curSym()+ma7.toFixed(2):'—',m25s=ma25!==null?curSym()+ma25.toFixed(2):'—';
   // bs and ss are independent scores — a short-term dip can score buy points
@@ -1517,11 +1556,12 @@ async function analyzeReal(coinId,price,change,high,low){
   // ss let any buy score, however weak, silently beat an even stronger sell
   // score. Only the dominant side can signal, and only if it clears Moderate.
   let signal,strength,reason;
-  if(bs>ss&&bs>=4){signal='BUY';strength='Strong';reason=`RSI ${rStr} (${t('oversold')}). ${t('bounce')}. MA7:${m7s} MA25:${m25s} · ${trend}${volStr?' · '+volStr:''}.`}
+  if(bm>=3&&bm>bs&&bm>ss){signal='BUY';strength=bm>=4?'Strong':'Moderate';reason=`${t('breakoutReason')} ADX ${adx.toFixed(0)} · ${trend}${volStr?' · '+volStr:''}.`}
+  else if(bs>ss&&bs>=4){signal='BUY';strength='Strong';reason=`RSI ${rStr} (${t('oversold')}). ${t('bounce')}. MA7:${m7s} MA25:${m25s} · ${trend}${volStr?' · '+volStr:''}.`}
   else if(bs>ss&&bs>=2){signal='BUY';strength='Moderate';reason=`RSI ${rStr} (${t('weakness')}). ${t('accumulation')}. MA7:${m7s} · ${trend}${volStr?' · '+volStr:''}.`}
   else if(ss>bs&&ss>=4){signal='SELL';strength='Strong';reason=`RSI ${rStr} (${t('overbought')}). ${t('takeProfit')}. MA7:${m7s} MA25:${m25s} · ${trend}${volStr?' · '+volStr:''}.`}
   else if(ss>bs&&ss>=2){signal='SELL';strength='Moderate';reason=`RSI ${rStr} (${t('slowing')}). ${t('reversal')}. MA7:${m7s} · ${trend}${volStr?' · '+volStr:''}.`}
-  else{signal='HOLD';strength='';reason=`RSI ${rStr} · MA7:${m7s} MA25:${m25s} · ${trend}. ${t('noSignal')}. ${t('waitEntry')}.`}
+  else{signal='HOLD';strength='';reason=held?`RSI ${rStr} · MA7:${m7s} MA25:${m25s} · ${trend} · ADX ${adx.toFixed(0)}. ${t('trendHold')}`:`RSI ${rStr} · MA7:${m7s} MA25:${m25s} · ${trend}. ${t('noSignal')}. ${t('waitEntry')}.`}
   const range=high-low,pos=range>0?(price-low)/range:0.5;
   return{signal,strength,rsi:rStr,ma7:m7s,ma25:m25s,volRatio:volRatio?volRatio.toFixed(2)+'x':'—',trend,reason,pos:(pos*100).toFixed(0)};
 }
