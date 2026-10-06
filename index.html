@@ -2068,7 +2068,10 @@ async function renderCoins(data){
     const o={BUY:0,HOLD:1,SELL:2};if(o[sa.signal]!==o[sb.signal])return o[sa.signal]-o[sb.signal];
     return(sb.strength==='Strong'?1:0)-(sa.strength==='Strong'?1:0);
   });
-  list.innerHTML=sorted.map(coin=>{
+  // One coin's card failing to build must never blank the whole list (a
+  // single null field on one thin coin once did exactly that for hours) —
+  // skip just that card and log it.
+  list.innerHTML=sorted.map(coin=>{try{return(()=>{
     const d=data.find(x=>x.id===coin.id);if(!d)return'';
     currentPrices[coin.id]=cv(d.current_price);
     const sig=sigFor(coin.id);
@@ -2286,7 +2289,7 @@ async function renderCoins(data){
         ${chartSection}${tradeBtns}${manualSection}
       </div>
     </div>`;
-  }).join('');
+  })();}catch(err){console.error('Could not render card for',coin.id,err);return'';}}).join('');
   if(openCard){const p=document.getElementById(openCard);if(p){p.classList.add('open');const coinId=openCard.replace('dp-','');loadChart(coinId,activeChartTab[coinId]||1,`chart-${coinId}`);}}
 }
 
@@ -2782,11 +2785,21 @@ async function deleteRule(id){
 
 // ── FETCH DATA ───────────────────────────────────────────────
 let lastFetchTime=0;
+// Mirrors priceService.js's sanitizeCoin: a null where a number is expected
+// (CoinGecko does this for thin coins) must never reach rendering code. Drops
+// a coin with no usable price instead of showing a made-up one.
+function sanitizePrices(list){
+  const num=(v,f)=>(v===null||v===undefined||!Number.isFinite(Number(v))?f:Number(v));
+  return (list||[]).filter(c=>c&&Number.isFinite(Number(c.current_price))&&Number(c.current_price)>0).map(c=>{
+    const p=Number(c.current_price);
+    return{...c,current_price:p,price_change_percentage_24h:num(c.price_change_percentage_24h,0),high_24h:num(c.high_24h,p),low_24h:num(c.low_24h,p),total_volume:num(c.total_volume,0)};
+  });
+}
 async function fetchData(){
   document.getElementById('errorBanner').style.display='none';
   try{
     if(tradingMode==='real'){await refreshRealPortfolio();if(document.getElementById('tab-portfolio')?.classList.contains('active'))renderRealPortfolioView();}
-    const data=await apiFetch('/api/prices');
+    const data=sanitizePrices(await apiFetch('/api/prices'));
     lastData=data; // set before updateWatchlist() so it sees this cycle's data, not the previous one
     updateWatchlist();
     const filtered=data.filter(d=>COINS.some(c=>c.id===d.id));
