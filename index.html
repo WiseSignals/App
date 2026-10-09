@@ -2654,11 +2654,12 @@ async function removeCustomCoin(coinId){
 }
 
 // ── CUSTOM RULES (Platinum) ──────────────────────────────────
-// Mirrors the backend's autoTradeEngine.js MIN_MOVE_PCT_TO_CLEAR_FEES — a
+// Mirrors the backend's autoTradeEngine.js MIN_CUSTOM_SELL_GAIN_PCT — a
 // take-profit rule (pct_gain_from_entry + sell) set below this is rejected
 // server-side anyway, but checking here first avoids a round-trip just to
-// get told the same thing.
-const MIN_GAIN_PCT_TO_CLEAR_FEES=1;
+// get told the same thing. Kraken's real fee is ~0.8% per side (~1.6% round
+// trip), so 2% is the smallest target that can still net a profit.
+const MIN_GAIN_PCT_TO_CLEAR_FEES=2;
 let rulesCache=[];
 const PCT_CONDITIONS=['pct_gain_from_entry','pct_drop_from_entry','pct_gain_from_creation','pct_drop_from_creation'];
 
