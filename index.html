@@ -1822,6 +1822,8 @@ function currencyMismatchNote(pairInfo){
   const quote=pairInfo.quote;
   const isStableEquivUsd=displayCcy==='USD'&&quote==='USDT';
   if(quote===displayCcy||isStableEquivUsd)return'';
+  // The app trades in USD by design (cash is always USD on Kraken; amounts are only DISPLAYED in your currency), so a USD pair is expected.
+  if(quote==='USD')return'';
   return`\n⚠️ This trades against ${quote} on Kraken, not your account currency (${displayCcy}) — funds move in ${quote}.`;
 }
 // amountOverride lets the manual-buy panel pass its own typed amount;
@@ -1833,7 +1835,7 @@ async function realBuy(coinId,amountOverride){
   // Buys now auto-fund from whichever of CAD/USD/EUR has cash (splitting across
   // them if needed — see krakenService.planBuySplit), so there's no single
   // "this trades against a different currency" warning to show here anymore.
-  if(!confirm(`Place a real Kraken limit buy order?\n${coin?.name} · ${curSym()}${amount.toFixed(2)}\nThis places a limit order near the current price — it may take time to fill. Funded from CAD/USD/EUR cash, splitting across them if needed. Check Portfolio → Real for status.${isAutoBlocked(coinId)?t('autoBlockedConfirm'):''}`))return;
+  if(!confirm(`Place a real Kraken limit buy order?\n${coin?.name} · ${curSym()}${amount.toFixed(2)}\nThis places a limit order near the current price — it may take time to fill. Trades in USD: any CAD/EUR cash is converted to USD first (about 0.2% once); amounts are shown in your currency. Check Portfolio → Real for status.${isAutoBlocked(coinId)?t('autoBlockedConfirm'):''}`))return;
   try{
     const result=await apiFetch('/api/real/buy',{method:'POST',body:JSON.stringify({coinId,coinSymbol:coin?.symbol||coinId.toUpperCase(),amount})});
     const orders=result.orders||[result];
