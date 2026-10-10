@@ -263,8 +263,8 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
       <div class="settings-title"><i class="ti ti-robot"></i> <span id="lAutoTitle"></span></div>
       <div class="setting-row"><span class="setting-label" id="lAutoEnabled"></span><input type="checkbox" id="autoEnabled" onchange="onAutoEnabledChange(this)" style="width:18px;height:18px;cursor:pointer"></div>
       <div class="setting-row"><span class="setting-label" id="lTradingStrategy"></span>
-        <select id="tradingStrategy" onchange="onTradingStrategyChange(this)">
-          <option value="longterm" id="oLongterm"></option>
+        <select id="tradingStrategy" onchange="onTradingStrategyChange(this)" disabled>
+          <option value="longterm" id="oLongterm" disabled hidden></option>
           <option value="scalp" id="oScalp"></option>
         </select>
       </div>
@@ -651,7 +651,7 @@ en:{
   autoOn:'Auto-trade is ON · Strong signals execute after',minDelay:'min',
   autoTitle:'Auto-Trade',autoEnabled:'Auto-trade enabled',riskLevel:'Risk level (max {m}%)',
   tradingStrategy:'Strategy',strategyLongterm:'Long-term',strategyScalp:'Scalp',
-  tradingStrategyDesc:'Long-term reads daily price history, waits several minutes to confirm a signal, and takes profit in stages — built to hold a position over days. Scalp reads hourly history instead, confirms in 2 minutes, only enters when the move is big enough to clear round-trip Kraken fees with margin, always exits fully rather than in stages, and adds a fast stop-loss that sells immediately if a position drops 3% from entry — built for several quick trades a day. Applies to both manual signals shown here and auto-trade.',
+  tradingStrategyDesc:'The Long-term strategy is temporarily disabled while it is being reviewed. Scalp reads hourly history, confirms in 2 minutes, only enters when the move is big enough to clear Kraken fees with margin, exits fully rather than in stages, and has a fast stop-loss. Applies to both manual signals shown here and auto-trade.',
   autoRealOverride:'Keep auto-trade real in paper mode',autoRealOverrideDesc:'When ON, auto-trade keeps placing real Kraken orders even if you switch your own view back to Paper — a red "AUTO REAL" badge stays visible on every tab as a reminder. When OFF (default), switching to Paper also turns auto-trade off.',
   maxOrder:'Max buy size',maxOrderUnlimited:'Unlimited',
   maxOrderDesc:'Unlimited (default): one order per coin, sized from your risk %, using the full budget — auto-trade won\'t buy more of a coin it already holds. Setting a cap instead bounds every BUY at that amount and lets auto-trade buy the same coin again on a later cycle if it\'s still a Strong Buy, building the position in capped steps instead of one large order. Only ever limits buys — a Strong Sell always sells based on your risk % of the position\'s current value (not this cap), so a position built from several capped buys still exits properly instead of leaving a leftover sliver behind.',
@@ -749,7 +749,7 @@ fa:{
   autoOn:'اتوتریدر روشن است · سیگنال‌های قوی بعد از',minDelay:'دقیقه اجرا می‌شوند',
   autoTitle:'معامله اتوماتیک',autoEnabled:'اتوتریدر فعال',riskLevel:'سطح ریسک (حداکثر {m}٪)',
   tradingStrategy:'استراتژی',strategyLongterm:'بلند مدت',strategyScalp:'نوسان‌گیری',
-  tradingStrategyDesc:'استراتژی بلندمدت از تاریخچه قیمت روزانه استفاده می‌کند، چند دقیقه صبر می‌کند تا سیگنال تأیید شود و سود را در چند مرحله برداشت می‌کند — برای نگه‌داشتن یک موقعیت در چند روز طراحی شده. نوسان‌گیری در عوض از تاریخچه ساعتی استفاده می‌کند، تنها ۲ دقیقه صبر می‌کند، فقط زمانی وارد می‌شود که حرکت قیمت به اندازه‌ای بزرگ باشد که کارمزد رفت‌وبرگشت کرکن را با حاشیه سود پوشش دهد، همیشه به‌طور کامل (نه مرحله‌ای) خارج می‌شود و یک حد ضرر سریع دارد که اگر موقعیت ۳٪ از قیمت خرید افت کند بلافاصله می‌فروشد — برای چند معامله سریع در روز طراحی شده. این تنظیم روی سیگنال‌های دستی نمایش داده‌شده در اینجا و اتوتریدر هر دو اعمال می‌شود.',
+  tradingStrategyDesc:'استراتژی بلندمدت فعلاً در حال بررسی است و غیرفعال شده. نوسان‌گیری از تاریخچه ساعتی استفاده می‌کند، ۲ دقیقه برای تأیید صبر می‌کند، فقط وقتی حرکت قیمت کارمزد کراکن را با حاشیه پوشش دهد وارد می‌شود، کامل خارج می‌شود و حد ضرر سریع دارد. این تنظیم روی سیگنال‌های دستی و اتوتریدر هر دو اعمال می‌شود.',
   autoRealOverride:'اتوتریدر واقعی در حالت آزمایشی هم فعال بماند',autoRealOverrideDesc:'در صورت فعال بودن، اتوتریدر حتی اگر نمای خودتان را به حالت آزمایشی برگردانید همچنان سفارش‌های واقعی در کرکن ثبت می‌کند — یک نشان قرمز «AUTO REAL» همیشه در همه تب‌ها نمایش داده می‌شود. در صورت غیرفعال بودن (پیش‌فرض)، برگشتن به حالت آزمایشی اتوتریدر را نیز خاموش می‌کند.',
   maxOrder:'حداکثر اندازه خرید',maxOrderUnlimited:'نامحدود',
   maxOrderDesc:'نامحدود (پیش‌فرض): یک سفارش برای هر کوین، بر اساس درصد ریسک شما، با کل بودجه — اتوتریدر کوینی که از قبل نگه‌داشته را دوباره نمی‌خرد. تعیین یک سقف باعث می‌شود هر خرید به همان مقدار محدود شود و اتوتریدر بتواند همان کوین را در چرخه بعدی هم بخرد اگر هنوز سیگنال خرید قوی باشد — یعنی موقعیت را در قدم‌های محدود بسازد به‌جای یک سفارش بزرگ. این سقف فقط روی خرید اثر دارد — فروش قوی همیشه بر اساس درصد ریسک شما از ارزش فعلی موقعیت انجام می‌شود (نه این سقف)، پس موقعیتی که از چند خرید محدود ساخته شده، درست و کامل خارج می‌شود و مقدار باقیمانده‌ای جا نمی‌ماند.',
@@ -847,7 +847,7 @@ es:{
   autoOn:'Auto-trade ACTIVO · Señales fuertes ejecutarán en',minDelay:'min',
   autoTitle:'Operación Automática',autoEnabled:'Auto-trade activado',riskLevel:'Nivel de riesgo (máx {m}%)',
   tradingStrategy:'Estrategia',strategyLongterm:'Largo plazo',strategyScalp:'Scalping',
-  tradingStrategyDesc:'Largo plazo usa el historial de precios diario, espera varios minutos para confirmar una señal y toma ganancias en etapas — pensado para mantener una posición durante días. Scalping usa en cambio el historial por hora, confirma en 2 minutos, solo entra cuando el movimiento es lo bastante grande para cubrir con margen las comisiones de ida y vuelta en Kraken, siempre sale por completo en vez de por etapas, y añade un stop-loss rápido que vende de inmediato si una posición cae 3% desde la entrada — pensado para varias operaciones rápidas al día. Se aplica tanto a las señales manuales mostradas aquí como a auto-trade.',
+  tradingStrategyDesc:'La estrategia de largo plazo está desactivada temporalmente mientras se revisa. Scalping usa el historial por hora, confirma en 2 minutos, solo entra cuando el movimiento cubre con margen las comisiones de Kraken, sale por completo y tiene un stop-loss rápido. Se aplica a las señales manuales y a auto-trade.',
   autoRealOverride:'Mantener auto-trade real en modo papel',autoRealOverrideDesc:'Si está ACTIVADO, auto-trade sigue colocando órdenes reales en Kraken aunque cambies tu propia vista a Papel — una insignia roja "AUTO REAL" permanece visible en todas las pestañas como recordatorio. Si está DESACTIVADO (por defecto), cambiar a Papel también apaga auto-trade.',
   maxOrder:'Tamaño máximo de compra',maxOrderUnlimited:'Ilimitado',
   maxOrderDesc:'Ilimitado (por defecto): una orden por moneda, calculada con tu % de riesgo, usando todo el presupuesto — auto-trade no comprará más de una moneda que ya tiene. Fijar un límite en cambio acota cada COMPRA a esa cantidad y permite que auto-trade compre la misma moneda otra vez en un ciclo posterior si sigue en Compra Fuerte, construyendo la posición en pasos limitados en vez de una sola orden grande. Solo limita las compras — una Venta Fuerte siempre vende según tu % de riesgo del valor actual de la posición (no este límite), así que una posición construida con varias compras limitadas igual se cierra por completo, sin dejar un resto.',
@@ -1202,7 +1202,7 @@ function loadAppSettings(){
     notifyPasswordChange:blob.notifyPasswordChange!==false,notifyExpiry:blob.notifyExpiry!==false,
     auto_trade_enabled:!!currentUser.auto_trade_enabled,
     auto_real_override:!!currentUser.auto_real_override,
-    trading_strategy:currentUser.trading_strategy||'longterm',
+    trading_strategy:'scalp', // long-term strategy is disabled
     auto_max_order_usd:currentUser.auto_max_order_usd||0,
     auto_stop_loss_pct:currentUser.auto_stop_loss_pct!=null?currentUser.auto_stop_loss_pct:3,
     auto_risk_pct:currentUser.auto_risk_pct||25,
@@ -1329,7 +1329,7 @@ function onAutoRealOverrideChange(el){
 // real-money behavior change in this tab.
 function onTradingStrategyChange(el){
   if(el.value==='scalp'&&tradingMode==='real'&&appSettings.auto_trade_enabled&&!confirm(t('scalpStrategyWarning'))){
-    el.value=appSettings.trading_strategy||'longterm';
+    el.value='scalp';
     return;
   }
   saveSetting('tradingStrategy',el.value);
@@ -1492,7 +1492,7 @@ async function analyzeReal(coinId,price,change,high,low){
     const range=high-low,pos=range>0?(price-low)/range:0.5;
     return{signal:'HOLD',strength:'',score:0,rsi:'—',ma7:null,ma25:null,volRatio:'—',trend:'stable',reason:t('noSignal'),pos:(pos*100).toFixed(0)};
   }
-  const strategy=appSettings.trading_strategy==='scalp'?'scalp':'longterm';
+  const strategy='scalp'; // long-term strategy is disabled
   const hist=strategy==='scalp'?await fetchHistoricalScalp(coinId):await fetchHistorical(coinId);
   if(!hist||hist.prices.length<15)return analyzeFallback(price,change,high,low);
   // hist.prices come raw in USD from /api/chart; convert alongside the
@@ -2454,7 +2454,7 @@ function isExcluded(coinId){
 
 function renderAutoTab(){
   const en=document.getElementById('autoEnabled');if(en)en.checked=!!appSettings.auto_trade_enabled;
-  const ts=document.getElementById('tradingStrategy');if(ts)ts.value=appSettings.trading_strategy||'longterm';
+  const ts=document.getElementById('tradingStrategy');if(ts)ts.value='scalp';
   const aro=document.getElementById('autoRealOverride');
   // "Keep auto-trade real in paper mode" only ever does anything while
   // auto-trade itself is on — it decides what auto-trade does when it's
