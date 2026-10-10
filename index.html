@@ -513,7 +513,7 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
   </div>
 </div>
 <script>
-const FEE=0.0026;
+const FEE=0.008; // mirrors backend tradeExecutor.js (Kraken's real taker fee)
 const BASE_COINS=[
   {id:'bitcoin',symbol:'BTC',name:'Bitcoin',bg:'#FAEEDA',tc:'#633806'},
   {id:'ethereum',symbol:'ETH',name:'Ethereum',bg:'#E6F1FB',tc:'#0C447C'},
@@ -706,7 +706,7 @@ en:{
   allSignals:'All signals',moderatePlus:'Moderate+',strongOnly:'Strong only',anyMove:'Any',
   safe:'Safe (10%)',moderate:'Moderate (25%)',suggested:'Suggested',aggressive:'Aggressive (50%)',
   autoExecuted:'Auto-trade executed',queued:'Queued at',executesIn:'executes in',queuedBadge:'Queued',queuedTooltip:'{type} queued — executes in ~{min} min if the signal holds',
-  feeNote:'Fee: 0.26% deducted on execution',
+  feeNote:'Fee: 0.80% deducted on execution (Kraken\'s real fee)',
   holdingNote:'holding',
   paperPortfolio:'Paper portfolio',
   toastBuy:'✅ Bought',toastSell:'Sold',toastRotate:'↔️ Rotated',toastManualBuy:'✅ Manual Buy',toastAutoBuy:'🤖 Auto BUY',toastAutoSell:'🤖 Auto SELL',
@@ -804,7 +804,7 @@ fa:{
   allSignals:'همه سیگنال‌ها',moderatePlus:'متوسط و بالاتر',strongOnly:'فقط قوی',anyMove:'هر مقدار',
   safe:'ایمن (۱۰٪)',moderate:'متوسط (۲۵٪)',suggested:'پیشنهادی',aggressive:'تهاجمی (۵۰٪)',
   autoExecuted:'معامله اتوماتیک اجرا شد',queued:'در صف از',executesIn:'اجرا می‌شود در',queuedBadge:'در صف',queuedTooltip:'{type} در صف است — در حدود {min} دقیقه دیگر اجرا می‌شود، اگر سیگنال باقی بماند',
-  feeNote:'کارمزد: ۰.۲۶٪ از معامله',
+  feeNote:'کارمزد: ۰.۸۰٪ از معامله (کارمزد واقعی کراکن)',
   holdingNote:'در دست',
   paperPortfolio:'پورتفولیوی مجازی',
   toastBuy:'✅ خرید',toastSell:'فروش',toastRotate:'↔️ جابجایی',toastManualBuy:'✅ خرید دستی',toastAutoBuy:'🤖 خرید اتو',toastAutoSell:'🤖 فروش اتو',
@@ -902,7 +902,7 @@ es:{
   allSignals:'Todas las señales',moderatePlus:'Moderada+',strongOnly:'Solo fuertes',anyMove:'Cualquiera',
   safe:'Seguro (10%)',moderate:'Moderado (25%)',suggested:'Sugerido',aggressive:'Agresivo (50%)',
   autoExecuted:'Auto-trade ejecutado',queued:'En cola desde',executesIn:'ejecuta en',queuedBadge:'En cola',queuedTooltip:'{type} en cola — se ejecuta en ~{min} min si la señal se mantiene',
-  feeNote:'Comisión: 0.26% deducido al ejecutar',
+  feeNote:'Comisión: 0.80% deducido al ejecutar (comisión real de Kraken)',
   holdingNote:'en cartera',
   paperPortfolio:'Portafolio de prueba',
   toastBuy:'✅ Comprado',toastSell:'Vendido',toastRotate:'↔️ Rotado',toastManualBuy:'✅ Compra manual',toastAutoBuy:'🤖 Auto COMPRA',toastAutoSell:'🤖 Auto VENTA',
@@ -1419,17 +1419,20 @@ function updateAutoNotice(){
 }
 
 // ── TECHNICAL ANALYSIS ───────────────────────────────────────
-function downsampleDaily(pairs){
+function downsampleDaily(pairs,dropToday){
   // pairs: [[timestamp,value],...] at ~hourly resolution -> one point per calendar day (last value of the day)
+  // dropToday: mirrors backend priceService.js — the current UTC day is unfinished, so its bucket isn't a daily close.
   const byDay={};
   pairs.forEach(([ts,v])=>{const day=new Date(ts).toISOString().slice(0,10);byDay[day]=v;});
-  return Object.keys(byDay).sort().map(day=>byDay[day]);
+  const days=Object.keys(byDay).sort();
+  if(dropToday&&days.length&&days[days.length-1]===new Date().toISOString().slice(0,10))days.pop();
+  return days.map(day=>byDay[day]);
 }
 async function fetchHistorical(coinId){
   if(historicalCache[coinId]&&Date.now()-historicalCache[coinId].ts<300000)return historicalCache[coinId].data;
   try{
     const data=await apiFetch(`/api/chart/${coinId}?timeframe=1m`);
-    const result={prices:downsampleDaily(data.prices||[]),volumes:downsampleDaily(data.volumes||[])};
+    const result={prices:downsampleDaily(data.prices||[],true),volumes:downsampleDaily(data.volumes||[],true)};
     historicalCache[coinId]={data:result,ts:Date.now()};return result;
   }catch(e){return null}
 }
