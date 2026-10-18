@@ -262,6 +262,8 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
     <div class="settings-section">
       <div class="settings-title"><i class="ti ti-robot"></i> <span id="lAutoTitle"></span></div>
       <div class="setting-row"><span class="setting-label" id="lAutoEnabled"></span><input type="checkbox" id="autoEnabled" onchange="onAutoEnabledChange(this)" style="width:18px;height:18px;cursor:pointer"></div>
+      <div class="setting-row"><span class="setting-label" id="lExitOnly"></span><input type="checkbox" id="autoExitOnly" onchange="onAutoExitOnlyChange(this)" style="width:18px;height:18px;cursor:pointer"></div>
+      <div id="lExitOnlyDesc" style="font-size:11px;color:var(--text-tertiary);margin:-4px 0 8px;line-height:1.5"></div>
       <div class="setting-row"><span class="setting-label" id="lTradingStrategy"></span>
         <select id="tradingStrategy" onchange="onTradingStrategyChange(this)" disabled>
           <option value="longterm" id="oLongterm" disabled hidden></option>
@@ -649,6 +651,7 @@ en:{
   bestTrade:'Best trade',worstTrade:'Worst trade',avgPerTrade:'Avg per trade',feesPaid:'Fees paid',
   trades:'trades',wins:'wins',losses:'losses',noTradesPeriod:'No trades in this period.',
   autoOn:'Auto-trade is ON · Strong signals execute after',minDelay:'min',
+  exitOnly:'Exit-only mode (no new buys)',exitOnlyDesc:'Auto-trade stays ON but stops opening new positions. Your open positions keep their protection: the stop-loss, the trailing exit and profit-taking sells all keep working. Use it when the market looks unsafe. Turning it on also cancels any buy waiting in the queue or resting in the order book.',exitOnlyConfirm:'Turn ON exit-only mode?\n\nAuto-trade will stop buying (including top-ups) and will cancel any pending buy. Stop-loss, trailing exits and profit-taking sells keep working on your open positions.',
   autoTitle:'Auto-Trade',autoEnabled:'Auto-trade enabled',riskLevel:'Risk level (max {m}%)',
   tradingStrategy:'Strategy',strategyLongterm:'Long-term',strategyScalp:'Scalp',
   tradingStrategyDesc:'The Long-term strategy is temporarily disabled while it is being reviewed. Scalp reads hourly history, confirms in 2 minutes, only enters when the move is big enough to clear Kraken fees with margin, exits fully rather than in stages, and has a fast stop-loss. Applies to both manual signals shown here and auto-trade.',
@@ -747,6 +750,7 @@ fa:{
   bestTrade:'بهترین معامله',worstTrade:'بدترین معامله',avgPerTrade:'میانگین هر معامله',feesPaid:'کارمزد پرداختی',
   trades:'معامله',wins:'برد',losses:'باخت',noTradesPeriod:'در این دوره معامله‌ای نبود.',
   autoOn:'اتوتریدر روشن است · سیگنال‌های قوی بعد از',minDelay:'دقیقه اجرا می‌شوند',
+  exitOnly:'حالت فقط خروج (بدون خرید جدید)',exitOnlyDesc:'اتوتریدر روشن می‌ماند ولی هیچ پوزیشن جدیدی باز نمی‌کند. پوزیشن‌های باز همچنان محافظت می‌شوند: حد ضرر، خروج دنباله‌دار و فروش‌های سودی کار می‌کنند. وقتی بازار ناامن به نظر می‌رسد از این حالت استفاده کنید. با روشن کردنش، هر خریدی که در صف انتظار یا در دفتر سفارش‌ها منتظر پر شدن است هم لغو می‌شود.',exitOnlyConfirm:'حالت فقط خروج روشن شود؟\n\nاتوتریدر خرید جدید (از جمله تقویت پوزیشن) را متوقف و هر خرید در انتظار را لغو می‌کند. حد ضرر، خروج دنباله‌دار و فروش‌های سودی روی پوزیشن‌های باز ادامه دارند.',
   autoTitle:'معامله اتوماتیک',autoEnabled:'اتوتریدر فعال',riskLevel:'سطح ریسک (حداکثر {m}٪)',
   tradingStrategy:'استراتژی',strategyLongterm:'بلند مدت',strategyScalp:'نوسان‌گیری',
   tradingStrategyDesc:'استراتژی بلندمدت فعلاً در حال بررسی است و غیرفعال شده. نوسان‌گیری از تاریخچه ساعتی استفاده می‌کند، ۲ دقیقه برای تأیید صبر می‌کند، فقط وقتی حرکت قیمت کارمزد کراکن را با حاشیه پوشش دهد وارد می‌شود، کامل خارج می‌شود و حد ضرر سریع دارد. این تنظیم روی سیگنال‌های دستی و اتوتریدر هر دو اعمال می‌شود.',
@@ -845,6 +849,7 @@ es:{
   bestTrade:'Mejor operación',worstTrade:'Peor operación',avgPerTrade:'Promedio/operación',feesPaid:'Comisiones',
   trades:'operaciones',wins:'victorias',losses:'pérdidas',noTradesPeriod:'Sin operaciones en este período.',
   autoOn:'Auto-trade ACTIVO · Señales fuertes ejecutarán en',minDelay:'min',
+  exitOnly:'Modo solo salida (sin compras nuevas)',exitOnlyDesc:'El auto-trade sigue ACTIVO pero deja de abrir posiciones nuevas. Tus posiciones abiertas siguen protegidas: el stop-loss, la salida con trailing y las ventas para tomar ganancias siguen funcionando. Úsalo cuando el mercado parezca inseguro. Al activarlo también se cancela cualquier compra en cola o pendiente en el libro de órdenes.',exitOnlyConfirm:'¿Activar el modo solo salida?\n\nEl auto-trade dejará de comprar (incluidos refuerzos) y cancelará cualquier compra pendiente. El stop-loss, la salida con trailing y las ventas con ganancia siguen en tus posiciones abiertas.',
   autoTitle:'Operación Automática',autoEnabled:'Auto-trade activado',riskLevel:'Nivel de riesgo (máx {m}%)',
   tradingStrategy:'Estrategia',strategyLongterm:'Largo plazo',strategyScalp:'Scalping',
   tradingStrategyDesc:'La estrategia de largo plazo está desactivada temporalmente mientras se revisa. Scalping usa el historial por hora, confirma en 2 minutos, solo entra cuando el movimiento cubre con margen las comisiones de Kraken, sale por completo y tiene un stop-loss rápido. Se aplica a las señales manuales y a auto-trade.',
@@ -963,7 +968,7 @@ function applyLanguage(){
   const hsm={hsNewest:'sortNewest',hsPnlDesc:'sortPnlDesc',hsPnlAsc:'sortPnlAsc',hsPctDesc:'sortPctDesc'};
   Object.entries(hsm).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   // Auto tab
-  const am={lAutoTitle:'autoTitle',lAutoEnabled:'autoEnabled',lTradingStrategy:'tradingStrategy',lTradingStrategyDesc:'tradingStrategyDesc',oLongterm:'strategyLongterm',oScalp:'strategyScalp',lStopLoss:'stopLoss',oStopLossCustom:'customPct',oStopLossOff:'stopLossOff',lStopLossCustomPct:'customPct',lStopLossDesc:'stopLossDesc',lAutoRealOverride:'autoRealOverride',lAutoRealOverrideDesc:'autoRealOverrideDesc',lMaxOrder:'maxOrder',oMaxUnlimited:'maxOrderUnlimited',oMaxCustom:'custom',lMaxOrderCustomAmt:'customAmt',lMaxOrderDesc:'maxOrderDesc',lDelay:'delayBefore',lDelayScalpNote:'delayScalpNote',lQueuedTrades:'queuedTrades',lAutoLog:'autoLog',lExcludeTitle:'excludeTitle'};
+  const am={lAutoTitle:'autoTitle',lAutoEnabled:'autoEnabled',lExitOnly:'exitOnly',lExitOnlyDesc:'exitOnlyDesc',lTradingStrategy:'tradingStrategy',lTradingStrategyDesc:'tradingStrategyDesc',oLongterm:'strategyLongterm',oScalp:'strategyScalp',lStopLoss:'stopLoss',oStopLossCustom:'customPct',oStopLossOff:'stopLossOff',lStopLossCustomPct:'customPct',lStopLossDesc:'stopLossDesc',lAutoRealOverride:'autoRealOverride',lAutoRealOverrideDesc:'autoRealOverrideDesc',lMaxOrder:'maxOrder',oMaxUnlimited:'maxOrderUnlimited',oMaxCustom:'custom',lMaxOrderCustomAmt:'customAmt',lMaxOrderDesc:'maxOrderDesc',lDelay:'delayBefore',lDelayScalpNote:'delayScalpNote',lQueuedTrades:'queuedTrades',lAutoLog:'autoLog',lExcludeTitle:'excludeTitle'};
   Object.entries(am).forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.textContent=t(k);});
   const maxRisk=currentUser?.plan==='platinum'?100:50;
   const lrl=document.getElementById('lRiskLevel');if(lrl)lrl.textContent=t('riskLevel').replace('{m}',maxRisk);
@@ -1201,6 +1206,7 @@ function loadAppSettings(){
     notifyStrongBuy:blob.notifyStrongBuy!==false,notifyStrongSell:blob.notifyStrongSell!==false,
     notifyPasswordChange:blob.notifyPasswordChange!==false,notifyExpiry:blob.notifyExpiry!==false,
     auto_trade_enabled:!!currentUser.auto_trade_enabled,
+    auto_exit_only:!!currentUser.auto_exit_only,
     auto_real_override:!!currentUser.auto_real_override,
     trading_strategy:'scalp', // long-term strategy is disabled
     auto_max_order_usd:currentUser.auto_max_order_usd||0,
@@ -1212,8 +1218,8 @@ function loadAppSettings(){
 }
 
 async function saveSetting(k,v){
-  if(k==='autoEnabled'||k==='autoRealOverride')v=(v===true||v==='true');
-  const prevValue=k==='autoEnabled'?appSettings.auto_trade_enabled:k==='autoRealOverride'?appSettings.auto_real_override:k==='autoRisk'?appSettings.auto_risk_pct:k==='autoDelay'?appSettings.auto_delay_min:k==='tradingStrategy'?appSettings.trading_strategy:k==='autoMaxOrder'?appSettings.auto_max_order_usd:k==='autoStopLoss'?appSettings.auto_stop_loss_pct:k==='currency'?currentUser.currency:appSettings[k];
+  if(k==='autoEnabled'||k==='autoRealOverride'||k==='autoExitOnly')v=(v===true||v==='true');
+  const prevValue=k==='autoEnabled'?appSettings.auto_trade_enabled:k==='autoExitOnly'?appSettings.auto_exit_only:k==='autoRealOverride'?appSettings.auto_real_override:k==='autoRisk'?appSettings.auto_risk_pct:k==='autoDelay'?appSettings.auto_delay_min:k==='tradingStrategy'?appSettings.trading_strategy:k==='autoMaxOrder'?appSettings.auto_max_order_usd:k==='autoStopLoss'?appSettings.auto_stop_loss_pct:k==='currency'?currentUser.currency:appSettings[k];
   try{
     if(k==='currency'){
       currentUser.currency=v;
@@ -1227,6 +1233,11 @@ async function saveSetting(k,v){
       appSettings.auto_trade_enabled=v;
       await apiFetch('/api/user/settings',{method:'PUT',body:JSON.stringify({auto_trade_enabled:v})});
       renderAutoTab();
+    }else if(k==='autoExitOnly'){
+      appSettings.auto_exit_only=v;currentUser.auto_exit_only=v?1:0;
+      await apiFetch('/api/user/settings',{method:'PUT',body:JSON.stringify({auto_exit_only:v})});
+      renderAutoTab();
+      if(v&&typeof refreshAutoQueue==='function')await refreshAutoQueue();
     }else if(k==='autoRealOverride'){
       appSettings.auto_real_override=v;currentUser.auto_real_override=v;
       await apiFetch('/api/user/settings',{method:'PUT',body:JSON.stringify({auto_real_override:v})});
@@ -1268,6 +1279,7 @@ async function saveSetting(k,v){
   }catch(e){
     // Revert on failure (e.g. plan doesn't allow auto-trade) so the UI matches the server's actual state.
     if(k==='autoEnabled')appSettings.auto_trade_enabled=prevValue;
+    else if(k==='autoExitOnly'){appSettings.auto_exit_only=prevValue;currentUser.auto_exit_only=prevValue?1:0;renderAutoTab();}
     else if(k==='autoRealOverride'){appSettings.auto_real_override=prevValue;currentUser.auto_real_override=prevValue;renderModeBadge();}
     else if(k==='tradingStrategy'){appSettings.trading_strategy=prevValue;currentUser.trading_strategy=prevValue;const ts=document.getElementById('tradingStrategy');if(ts)ts.value=prevValue;}
     else if(k==='autoMaxOrder'){appSettings.auto_max_order_usd=prevValue;currentUser.auto_max_order_usd=prevValue;renderAutoTab();}
@@ -1306,6 +1318,11 @@ function onAutoRiskChange(el){
 // Mirrors the confirmation in setTradingMode() for the other direction:
 // turning auto-trade on while already in Real mode means real, unattended
 // orders start the moment a Strong signal fires.
+function onAutoExitOnlyChange(el){
+  // Turning it ON changes behavior immediately (pending buys are cancelled) — confirm; turning it OFF is harmless.
+  if(el.checked&&!confirm(t('exitOnlyConfirm'))){el.checked=false;return;}
+  saveSetting('autoExitOnly',el.checked);
+}
 function onAutoEnabledChange(el){
   if(el.checked&&tradingMode==='real'&&!confirm(t('realAutoTradeWarning'))){
     el.checked=false;
@@ -2463,6 +2480,7 @@ function isExcluded(coinId){
 
 function renderAutoTab(){
   const en=document.getElementById('autoEnabled');if(en)en.checked=!!appSettings.auto_trade_enabled;
+  const eo=document.getElementById('autoExitOnly');if(eo)eo.checked=!!appSettings.auto_exit_only;
   const ts=document.getElementById('tradingStrategy');if(ts)ts.value='scalp';
   const aro=document.getElementById('autoRealOverride');
   // "Keep auto-trade real in paper mode" only ever does anything while
