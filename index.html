@@ -503,6 +503,20 @@ canvas{width:100%!important;border-radius:var(--radius-md)}
   </div>
 </div>
 <div id="toast" class="toast"></div>
+<div id="marketOverlay" class="terms-overlay" style="display:none">
+  <div style="background:var(--bg-primary);border-radius:var(--radius-lg);max-width:420px;width:100%;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.4)">
+    <div id="mktHead" style="padding:14px 16px;color:#fff;font-weight:700;font-size:15px"></div>
+    <div style="padding:14px 16px">
+      <div id="mktStats" style="font-size:12px;font-weight:600;margin-bottom:8px"></div>
+      <div id="mktBody" style="font-size:13px;line-height:1.6;color:var(--text-primary)"></div>
+      <div id="mktNote" style="font-size:11px;color:var(--text-tertiary);margin-top:10px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+        <button id="mktAction" class="btn" style="display:none" onclick="mktToggleExitOnly()"></button>
+        <button id="mktClose" class="btn" onclick="closeMarketNotice()"></button>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="winToast" class="win-toast"><span class="wt-emoji">🎉</span><div><div class="wt-title" id="wtTitle"></div><div class="wt-sub" id="wtSub"></div></div></div>
 <div id="termsOverlay" class="terms-overlay" style="display:none">
   <div class="terms-modal">
@@ -651,6 +665,7 @@ en:{
   bestTrade:'Best trade',worstTrade:'Worst trade',avgPerTrade:'Avg per trade',feesPaid:'Fees paid',
   trades:'trades',wins:'wins',losses:'losses',noTradesPeriod:'No trades in this period.',
   autoOn:'Auto-trade is ON · Strong signals execute after',minDelay:'min',
+  mktRedTitle:'Market DANGER — broad decline',mktRedBody:'The market is in a broad, persistent decline. Buy signals are less reliable in these conditions and stop-loss exits are more likely. Keeping auto-trade on, or buying manually, is your decision. Options: buy manually in small amounts, switch on Exit-only mode (no new buys, your open positions stay protected), or turn auto-trade off — note that this also switches off the stop-loss. This notice updates as the market changes.',mktOrangeTitle:'Market CAUTION — weak market',mktOrangeBody:'The market is weak or unstable. Buy signals may be less reliable than usual. You decide whether to keep auto-trade on; Exit-only mode gives protection without new buys.',mktGreenTitle:'Market back to normal',mktGreenBody:'The decline has eased and the market looks normal again. If you switched on Exit-only mode you can switch it off and return to normal trading. Signals are never guaranteed.',mktStats:'{p}% of coins fell over the last 7 days (median {m}%)',mktNotAdvice:'General information, not financial advice.',mktBtnExitOn:'Turn ON exit-only mode',mktBtnExitOff:'Turn OFF exit-only mode',mktBtnClose:'Close',mktExitIsOn:'Exit-only mode is ON for your account.',
   exitOnly:'Exit-only mode (no new buys)',exitOnlyDesc:'Auto-trade stays ON but stops opening new positions. Your open positions keep their protection: the stop-loss, the trailing exit and profit-taking sells all keep working. Use it when the market looks unsafe. Turning it on also cancels any buy waiting in the queue or resting in the order book.',exitOnlyConfirm:'Turn ON exit-only mode?\n\nAuto-trade will stop buying (including top-ups) and will cancel any pending buy. Stop-loss, trailing exits and profit-taking sells keep working on your open positions.',
   autoTitle:'Auto-Trade',autoEnabled:'Auto-trade enabled',riskLevel:'Risk level (max {m}%)',
   tradingStrategy:'Strategy',strategyLongterm:'Long-term',strategyScalp:'Scalp',
@@ -750,6 +765,7 @@ fa:{
   bestTrade:'بهترین معامله',worstTrade:'بدترین معامله',avgPerTrade:'میانگین هر معامله',feesPaid:'کارمزد پرداختی',
   trades:'معامله',wins:'برد',losses:'باخت',noTradesPeriod:'در این دوره معامله‌ای نبود.',
   autoOn:'اتوتریدر روشن است · سیگنال‌های قوی بعد از',minDelay:'دقیقه اجرا می‌شوند',
+  mktRedTitle:'خطر بازار — افت گسترده',mktRedBody:'بازار در یک افت گسترده و ادامه‌دار است. در چنین شرایطی سیگنال‌های خرید کمتر قابل‌اتکا هستند و خروج با حد ضرر محتمل‌تر است. روشن نگه داشتن اتوتریدر یا خرید دستی تصمیم خودتان است. پیشنهادها: خرید دستی با حجم کم، روشن کردن حالت فقط خروج (بدون خرید جدید، پوزیشن‌های باز محافظت می‌شوند)، یا خاموش کردن اتوتریدر — توجه: این کار حد ضرر را هم خاموش می‌کند. این اطلاعیه با تغییر بازار به‌روز می‌شود.',mktOrangeTitle:'احتیاط بازار — بازار ضعیف',mktOrangeBody:'بازار ضعیف یا ناپایدار است. سیگنال‌های خرید ممکن است کمتر از معمول قابل‌اتکا باشند. روشن ماندن اتوتریدر تصمیم خودتان است؛ حالت فقط خروج بدون خرید جدید محافظت را نگه می‌دارد.',mktGreenTitle:'بازار به حالت عادی برگشت',mktGreenBody:'افت کم شده و بازار دوباره عادی به نظر می‌رسد. اگر حالت فقط خروج را روشن کرده بودید می‌توانید خاموشش کنید و به معاملات عادی برگردید. سیگنال‌ها هیچ‌وقت تضمینی نیستند.',mktStats:'{p}٪ کوین‌ها در ۷ روز اخیر افت کرده‌اند (میانه {m}٪)',mktNotAdvice:'اطلاعات عمومی است و توصیه‌ی مالی نیست.',mktBtnExitOn:'روشن کردن حالت فقط خروج',mktBtnExitOff:'خاموش کردن حالت فقط خروج',mktBtnClose:'بستن',mktExitIsOn:'حالت فقط خروج برای حساب شما روشن است.',
   exitOnly:'حالت فقط خروج (بدون خرید جدید)',exitOnlyDesc:'اتوتریدر روشن می‌ماند ولی هیچ پوزیشن جدیدی باز نمی‌کند. پوزیشن‌های باز همچنان محافظت می‌شوند: حد ضرر، خروج دنباله‌دار و فروش‌های سودی کار می‌کنند. وقتی بازار ناامن به نظر می‌رسد از این حالت استفاده کنید. با روشن کردنش، هر خریدی که در صف انتظار یا در دفتر سفارش‌ها منتظر پر شدن است هم لغو می‌شود.',exitOnlyConfirm:'حالت فقط خروج روشن شود؟\n\nاتوتریدر خرید جدید (از جمله تقویت پوزیشن) را متوقف و هر خرید در انتظار را لغو می‌کند. حد ضرر، خروج دنباله‌دار و فروش‌های سودی روی پوزیشن‌های باز ادامه دارند.',
   autoTitle:'معامله اتوماتیک',autoEnabled:'اتوتریدر فعال',riskLevel:'سطح ریسک (حداکثر {m}٪)',
   tradingStrategy:'استراتژی',strategyLongterm:'بلند مدت',strategyScalp:'نوسان‌گیری',
@@ -849,6 +865,7 @@ es:{
   bestTrade:'Mejor operación',worstTrade:'Peor operación',avgPerTrade:'Promedio/operación',feesPaid:'Comisiones',
   trades:'operaciones',wins:'victorias',losses:'pérdidas',noTradesPeriod:'Sin operaciones en este período.',
   autoOn:'Auto-trade ACTIVO · Señales fuertes ejecutarán en',minDelay:'min',
+  mktRedTitle:'PELIGRO de mercado — caída generalizada',mktRedBody:'El mercado está en una caída generalizada y persistente. En estas condiciones las señales de compra son menos fiables y es más probable que salte el stop-loss. Mantener el auto-trade activo o comprar manualmente es decisión tuya. Opciones: comprar a mano en cantidades pequeñas, activar el modo solo salida (sin compras nuevas, tus posiciones siguen protegidas) o apagar el auto-trade — ojo: eso también apaga el stop-loss. Este aviso se actualiza cuando cambia el mercado.',mktOrangeTitle:'PRECAUCIÓN de mercado — mercado débil',mktOrangeBody:'El mercado está débil o inestable. Las señales de compra pueden ser menos fiables de lo normal. Tú decides si mantienes el auto-trade; el modo solo salida da protección sin compras nuevas.',mktGreenTitle:'El mercado vuelve a la normalidad',mktGreenBody:'La caída se ha moderado y el mercado parece normal otra vez. Si activaste el modo solo salida puedes desactivarlo y volver a operar con normalidad. Las señales nunca están garantizadas.',mktStats:'El {p}% de las monedas cayó en los últimos 7 días (mediana {m}%)',mktNotAdvice:'Información general, no asesoramiento financiero.',mktBtnExitOn:'Activar modo solo salida',mktBtnExitOff:'Desactivar modo solo salida',mktBtnClose:'Cerrar',mktExitIsOn:'El modo solo salida está ACTIVADO en tu cuenta.',
   exitOnly:'Modo solo salida (sin compras nuevas)',exitOnlyDesc:'El auto-trade sigue ACTIVO pero deja de abrir posiciones nuevas. Tus posiciones abiertas siguen protegidas: el stop-loss, la salida con trailing y las ventas para tomar ganancias siguen funcionando. Úsalo cuando el mercado parezca inseguro. Al activarlo también se cancela cualquier compra en cola o pendiente en el libro de órdenes.',exitOnlyConfirm:'¿Activar el modo solo salida?\n\nEl auto-trade dejará de comprar (incluidos refuerzos) y cancelará cualquier compra pendiente. El stop-loss, la salida con trailing y las ventas con ganancia siguen en tus posiciones abiertas.',
   autoTitle:'Operación Automática',autoEnabled:'Auto-trade activado',riskLevel:'Nivel de riesgo (máx {m}%)',
   tradingStrategy:'Estrategia',strategyLongterm:'Largo plazo',strategyScalp:'Scalping',
@@ -2951,6 +2968,55 @@ if('serviceWorker' in navigator){
 }
 
 // ── INIT ─────────────────────────────────────────────────────
+// ── MARKET NOTICE ────────────────────────────────────────────
+// Traffic light computed by the server (marketStatusService.js). Red / orange: shown EVERY time the app is
+// opened (once per page load). Green: shown once, when the market recovers from red / orange.
+// Nothing here changes a setting by itself — the one-tap button only flips exit-only mode, after a confirm.
+let marketNotice=null;
+async function checkMarketNotice(){
+  try{
+    const m=await apiFetch('/api/market-status');
+    if(!m||m.unknown)return;
+    marketNotice=m;
+    let show=m.level==='red'||m.level==='orange';
+    if(m.level==='green'&&(m.previous==='red'||m.previous==='orange')){
+      let seen=null;try{seen=localStorage.getItem('ms_green_seen');}catch(e){}
+      if(String(seen)!==String(m.since))show=true;
+    }
+    if(show)renderMarketNotice();
+  }catch(e){/* the notice must never break the app */}
+}
+function renderMarketNotice(){
+  const m=marketNotice;if(!m)return;
+  const cfg={red:['mktRedTitle','mktRedBody','#c0392b'],orange:['mktOrangeTitle','mktOrangeBody','#d68910'],green:['mktGreenTitle','mktGreenBody','#1e8449']}[m.level];
+  if(!cfg)return;
+  const head=document.getElementById('mktHead');head.textContent=(m.level==='red'?'🔴 ':m.level==='orange'?'🟠 ':'🟢 ')+t(cfg[0]);head.style.background=cfg[2];
+  const st=document.getElementById('mktStats');
+  st.textContent=m.downPct!=null?t('mktStats').replace('{p}',m.downPct).replace('{m}',m.median7d):'';st.style.color=cfg[2];
+  document.getElementById('mktBody').textContent=t(cfg[1])+(appSettings.auto_exit_only&&m.level!=='green'?'\n\n'+t('mktExitIsOn'):'');
+  document.getElementById('mktBody').style.whiteSpace='pre-line';
+  document.getElementById('mktNote').textContent=t('mktNotAdvice');
+  document.getElementById('mktClose').textContent=t('mktBtnClose');
+  const btn=document.getElementById('mktAction');
+  // One-tap shortcut: only for users who actually run auto-trade.
+  if(m.level==='green'){
+    btn.style.display=appSettings.auto_exit_only?'inline-block':'none';btn.textContent=t('mktBtnExitOff');
+  }else{
+    btn.style.display=(appSettings.auto_trade_enabled&&!appSettings.auto_exit_only)?'inline-block':'none';btn.textContent=t('mktBtnExitOn');
+  }
+  document.getElementById('marketOverlay').style.display='flex';
+}
+function closeMarketNotice(){
+  document.getElementById('marketOverlay').style.display='none';
+  if(marketNotice&&marketNotice.level==='green'){try{localStorage.setItem('ms_green_seen',String(marketNotice.since));}catch(e){}}
+}
+async function mktToggleExitOnly(){
+  const turnOn=!(marketNotice&&marketNotice.level==='green');
+  if(turnOn&&!confirm(t('exitOnlyConfirm')))return;
+  await saveSetting('autoExitOnly',turnOn);
+  closeMarketNotice();
+}
+
 (async function init(){
   try{
     await loadUser();
@@ -2970,6 +3036,7 @@ if('serviceWorker' in navigator){
     renderPortfolioModeToggle();
     if(tradingMode==='real'){await refreshRealPortfolio();await refreshRealOrders();renderRealPortfolioView();}
     await fetchData();startTimer();
+    checkMarketNotice(); // not awaited: it must never delay or break loading
   }catch(e){
     // Every step above already has its own try/catch except this outer
     // sequence itself — before this, an unexpected throw anywhere in it
